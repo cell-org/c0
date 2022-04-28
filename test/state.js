@@ -117,4 +117,75 @@ describe('mint', () => {
 
 
   })
+
+
+  it('if paused, cannot setNS()', async () => {
+    // pause
+    let tx = await c0.token.methods(domain.address).setState(1).send()
+    tx = c0.token.methods(domain.address).setNS("New name", "new symbol").send()
+    await expect(tx).to.be.revertedWith("16")
+  })
+  it('if frozen, cannot setNS()', async () => {
+    let tx = await c0.token.methods(domain.address).setState(2).send()
+    tx = c0.token.methods(domain.address).setNS("New name", "new symbol").send()
+    await expect(tx).to.be.revertedWith("16")
+  })
+  it('can pause, and then re-open and setNS()', async () => {
+    let name = await c0.token.methods(domain.address).name().call()
+    let symbol = await c0.token.methods(domain.address).symbol().call()
+    expect(name).to.equal("Hello")
+    expect(symbol).to.equal("WORLD")
+
+    let state = await c0.token.methods(domain.address).state().call()
+    expect(state).to.equal('0')
+    // 1. pause
+    let tx = await c0.token.methods(domain.address).setState(1).send()
+    state = await c0.token.methods(domain.address).state().call()
+    expect(state).to.equal('1')
+    // 2. open
+    tx = await c0.token.methods(domain.address).setState(0).send()
+    state = await c0.token.methods(domain.address).state().call()
+    expect(state).to.equal('0')
+
+    tx = await c0.token.methods(domain.address).setNS("New name", "new symbol").send()
+    name = await c0.token.methods(domain.address).name().call()
+    symbol = await c0.token.methods(domain.address).symbol().call()
+    expect(name).to.equal("New name")
+    expect(symbol).to.equal("new symbol")
+  })
+
+
+  it('if paused, cannot setBaseURI()', async () => {
+    // pause
+    let tx = await c0.token.methods(domain.address).setState(1).send()
+    tx = c0.token.methods(domain.address).setBaseURI("https://mysite.com/files").send()
+    await expect(tx).to.be.revertedWith("15")
+  })
+  it('if frozen, cannot setBaseURI()', async () => {
+    let tx = await c0.token.methods(domain.address).setState(2).send()
+    tx = c0.token.methods(domain.address).setBaseURI("https://mysite.com/files").send()
+    await expect(tx).to.be.revertedWith("15")
+  })
+  it('can pause, and then re-open and setBaseURI()', async () => {
+    let baseURI = await c0.token.methods(domain.address).baseURI().call()
+    console.log("baseURI", baseURI)
+    expect(baseURI).to.equal("")
+
+    let state = await c0.token.methods(domain.address).state().call()
+    expect(state).to.equal('0')
+    // 1. pause
+    let tx = await c0.token.methods(domain.address).setState(1).send()
+    state = await c0.token.methods(domain.address).state().call()
+    expect(state).to.equal('1')
+    // 2. open
+    tx = await c0.token.methods(domain.address).setState(0).send()
+    state = await c0.token.methods(domain.address).state().call()
+    expect(state).to.equal('0')
+
+    tx = await c0.token.methods(domain.address).setBaseURI("https://mysite.com/files").send()
+    baseURI = await c0.token.methods(domain.address).baseURI().call()
+    console.log("baseURI", baseURI)
+  })
+
+
 })

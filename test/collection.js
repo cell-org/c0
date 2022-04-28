@@ -65,6 +65,7 @@ describe('collection', () => {
         name: "Hello",
         symbol: "WORLD"
       })
+      console.log("TX", tx)
       // compare created contract addresses with the predicted addresses
       expect(tx.events.OwnershipTransferred[0].address.toLowerCase())
       .to.equal(cs[i].toLowerCase())

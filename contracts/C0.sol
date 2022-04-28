@@ -50,6 +50,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
   event WithdrawerUpdated(Withdrawer withdrawer);
   event StateUpdated(uint indexed state);
   event BaseURIUpdated(string uri);
+  event NSUpdated(string name, string symbol);
   bytes32 public constant BODY_TYPE_HASH = keccak256("Body(uint256 id,bool raw,address minter,uint128 price,uint64 start,uint64 end,address royaltyReceiver,uint96 royaltyAmount,bytes32 merkleHash,bytes32 puzzleHash)");
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //
@@ -260,13 +261,20 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
     (bool sent1, ) = payable( withdrawer.account == address(0) ? owner() : withdrawer.account).call{value: amount}("");
     require(sent1, "13");
   }
-  function setBaseURI(string calldata b) external onlyOwner {
-    baseURI = b;
-    emit BaseURIUpdated(b);
-  }
   function setState(uint _state) external onlyOwner {
     require(state != 2, "14");
     state = _state;
     emit StateUpdated(_state);
+  }
+  function setBaseURI(string calldata b) external onlyOwner {
+    require(state == 0, "15");
+    baseURI = b;
+    emit BaseURIUpdated(b);
+  }
+  function setNS(string calldata name_, string calldata symbol_) external onlyOwner {
+    require(state == 0, "16");
+    _name = name_; 
+    _symbol = symbol_;
+    emit NSUpdated(_name, _symbol);
   }
 }
