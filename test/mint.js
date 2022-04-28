@@ -59,7 +59,7 @@ describe('mint', () => {
     let tx2 = c0.token.mint([token2], [])
     await expect(tx2).to.be.revertedWith("ERC721: token already minted");
   })
-  it("if minter is NOT specified, anyone can mint", async () => {
+  it("if sender is NOT specified, anyone can mint", async () => {
     let firstAccount = c0.account
     await c0.init({ web3, key: process.env.RINKEBY_PRIVATE_KEY_2 })
     let secondAccount = c0.account
@@ -99,7 +99,7 @@ describe('mint', () => {
     expect(owner2).to.equal(secondAccount)
 
   })
-  it("if minter is specified, only the specified minter can mint", async () => {
+  it("if sender is specified, only the specified sender can mint", async () => {
 
     // find the second account address
     let firstAccount = c0.account
@@ -122,12 +122,12 @@ describe('mint', () => {
     await c0.init({ web3, key: process.env.RINKEBY_PRIVATE_KEY })
 
     // 1.
-    // create a token for the second account as the minter
+    // create a token for the second account as the sender
     let token = await c0.token.create({
       domain,
       body: {
         cid: cid,
-        minter: secondAccount
+        sender: secondAccount
       }
     })
     // try to mint as the first account => should fail
@@ -135,12 +135,12 @@ describe('mint', () => {
     await expect(tx).to.be.revertedWith("2")
 
     // 2.
-    // create a token for the first account as the minter,
+    // create a token for the first account as the sender 
     let token2 = await c0.token.create({
       domain,
       body: {
         cid: cid,
-        minter: firstAccount
+        sender: firstAccount
       }
     })
     // try to mint as the second account => should fail
@@ -149,14 +149,14 @@ describe('mint', () => {
     await expect(tx2).to.be.revertedWith("2")
 
     // 3.
-    // create a token for the second account as the minter
+    // create a token for the second account as the sender
     // try to mint as the second account => should work
     await c0.init({ web3, key: process.env.RINKEBY_PRIVATE_KEY })
     let token3 = await c0.token.create({
       domain,
       body: {
         cid: cid2,
-        minter: secondAccount
+        sender: secondAccount
       }
     })
     // try to mint as the second account => should fail
@@ -166,13 +166,13 @@ describe('mint', () => {
     expect(owner3).to.equal(secondAccount)
 
     // 4.
-    // create a token for the first account as the minter
+    // create a token for the first account as the sender
     await c0.init({ web3, key: process.env.RINKEBY_PRIVATE_KEY })
     let token4 = await c0.token.create({
       domain,
       body: {
         cid: cid,
-        minter: firstAccount
+        sender: firstAccount
       }
     })
     // try to mint as the first account => should work
@@ -199,7 +199,7 @@ describe('mint', () => {
     await expect(tx).to.be.revertedWith("1");
 
   })
-  it('mint price must match: single mint', async () => {
+  it('mint value must match: single mint', async () => {
     let cids = []
     for(let i=0; i<2; i++) {
       let cid = await nebulus.add(Buffer.from("" + i))
@@ -209,7 +209,7 @@ describe('mint', () => {
       domain,
       body: {
         cid: cids[0],
-        price: "" + Math.pow(10, 18),
+        value: "" + Math.pow(10, 18),
       }
     })
 
@@ -228,7 +228,7 @@ describe('mint', () => {
     let owner1 = await c0.token.methods(domain.address).ownerOf(token.body.id).call()
     expect(owner1).to.equal(c0.account)
   })
-  it('mint price must match: multiple mint', async () => {
+  it('mint value must match: multiple mint', async () => {
     let cids = []
     for(let i=0; i<4; i++) {
       let cid = await nebulus.add(Buffer.from("" + i))
@@ -239,7 +239,7 @@ describe('mint', () => {
         domain,
         body: {
           cid: cid,
-          price: "" + Math.pow(10, 16),
+          value: "" + Math.pow(10, 16),
         }
       })
     }))
@@ -317,12 +317,12 @@ describe('mint', () => {
     let tx = c0.token.mint([token], [])
     await expect(tx).to.be.revertedWith("4");
   })
-  it('cannot mint a token with a minter attribute assigned to someone else', async () => {
+  it('cannot mint a token with a sender attribute assigned to someone else', async () => {
     let token = await c0.token.create({
       domain,
       body: {
         cid: cid,
-        minter: "0x701facAd49e0349Ad5b782A2A785Db705fC265E4"
+        sender: "0x701facAd49e0349Ad5b782A2A785Db705fC265E4"
       }
     })
     let tx = c0.token.mint([token])
@@ -388,21 +388,21 @@ describe('mint', () => {
       body: { cid }
     })
     console.log("token", token)
-    console.log("minter", c0.account)
+    console.log("sender", c0.account)
     let tx = await c0.token.mint([token], [])
     console.log("Tx", tx)
   })
-  it('mint with minter merkle tree should work when a correct proof is provided', async () => {
+  it('mint with sender merkle tree should work when a correct proof is provided', async () => {
     let signers = await ethers.getSigners();
-    let minters = signers.map(s => s.address)
-    minters.push(c0.account)
+    let senders = signers.map(s => s.address)
+    senders.push(c0.account)
 
     let token = await c0.token.create({
       domain,
-      body: { cid, minters }
+      body: { cid, senders }
     })
     console.log("token", token)
-    console.log("minter", c0.account)
+    console.log("sender", c0.account)
     let tx = await c0.token.mint([token], [])
     console.log("Tx", tx)
 
@@ -411,22 +411,21 @@ describe('mint', () => {
     expect(owner).to.equal(c0.account)
 
   })
-  it('mint with minter merkle tree should fail if the user is not in the tree', async () => {
+  it('mint with sender  merkle tree should fail if the user is not in the tree', async () => {
     let signers = await ethers.getSigners();
-    let minters = signers.map(s => s.address)
+    let senders = signers.map(s => s.address)
 
     let token = await c0.token.create({
       domain,
-      body: { cid, minters }
+      body: { cid, senders }
     })
     console.log("token", token)
-    console.log("minter", c0.account)
+    console.log("sender", c0.account)
     let tx = c0.token.mint([token], [])
     await expect(tx).to.be.revertedWith("6")
   })
   it('mint with hash puzzle', async () => {
 
-    // saves the minter_group merkle root as "minter_group" attribute
     let token = await c0.token.create({
       domain,
       body: {
@@ -443,7 +442,6 @@ describe('mint', () => {
   })
   it('mint with hash puzzle should fail if incorrect solution', async () => {
 
-    // saves the minter_group merkle root as "minter_group" attribute
     let token = await c0.token.create({
       domain,
       body: {
@@ -464,7 +462,7 @@ describe('mint', () => {
       domain,
       body: {
         cid,
-        minters: [
+        senders: [
           util.alice.address,
           util.bob.address,
           account2 

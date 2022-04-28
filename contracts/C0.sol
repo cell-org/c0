@@ -51,7 +51,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
   event StateUpdated(uint indexed state);
   event BaseURIUpdated(string uri);
   event NSUpdated(string name, string symbol);
-  bytes32 public constant BODY_TYPE_HASH = keccak256("Body(uint256 id,bool raw,address minter,uint128 price,uint64 start,uint64 end,address royaltyReceiver,uint96 royaltyAmount,bytes32 merkleHash,bytes32 puzzleHash)");
+  bytes32 public constant BODY_TYPE_HASH = keccak256("Body(uint256 id,bool raw,address sender,uint128 value,uint64 start,uint64 end,address royaltyReceiver,uint96 royaltyAmount,bytes32 merkleHash,bytes32 puzzleHash)");
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //
   // Struct declaration
@@ -59,11 +59,11 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   struct Body {
     uint256 id;
-    uint128 price;
+    uint128 value;
     uint64 start;
     uint64 end;
     bool raw; // 0: dag-pb, 1: raw
-    address minter;
+    address sender;
     address royaltyReceiver;
     uint96 royaltyAmount;
     bytes32 merkleHash;
@@ -135,8 +135,8 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
         BODY_TYPE_HASH,
         body.id,
         body.raw,
-        body.minter,
-        body.price,
+        body.sender,
+        body.value,
         body.start,
         body.end,
         body.royaltyReceiver,
@@ -146,10 +146,10 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
       ));
       // 1. Signature check
       require(_hashTypedDataV4(bodyhash).recover(body.signature) == owner(), "1");
-      // 2. Minter check
-      // if body.minter is specified, _msgSender() must equal body.minter
-      // if body.minter is not specified, anyone can mint
-      if (body.minter != address(0x0)) require(body.minter == _msgSender(), "2");
+      // 2. Sender check
+      // if body.sender is specified, _msgSender() must equal body.sender
+      // if body.sender is not specified, anyone can mint
+      if (body.sender != address(0x0)) require(body.sender == _msgSender(), "2");
       // 3. Time check
       require(body.start <= block.timestamp, "3");
       require(body.end >= block.timestamp, "4");
@@ -157,7 +157,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
       if (body.puzzleHash != 0) {
         require(proof.puzzle.length > 0 && keccak256(proof.puzzle) == body.puzzleHash, "5");
       }
-      // 5. Minter merkle proof => the computed root of the proof.minter + msg.sender matches the minter merkle root (body.minter_group) 
+      // 5. Sender merkle proof => the computed root of the proof.sender + msg.sender matches the sender merkle root (body.senders)
       if (body.merkleHash != 0) {
         require(proof.merkle.length > 0 && verify(body.merkleHash, proof.merkle, _msgSender()), "6");
       }
@@ -170,7 +170,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
         royalty[body.id] = Royalty(body.royaltyReceiver, body.royaltyAmount);
       }
       unchecked {
-        val+=body.price;
+        val+=body.value;
         ++i;
       }
     }

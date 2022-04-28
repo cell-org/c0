@@ -351,7 +351,7 @@
           },
           {
             "internalType": "uint128",
-            "name": "price",
+            "name": "value",
             "type": "uint128"
           },
           {
@@ -371,7 +371,7 @@
           },
           {
             "internalType": "address",
-            "name": "minter",
+            "name": "sender",
             "type": "address"
           },
           {

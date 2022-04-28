@@ -60,7 +60,7 @@ describe('withdraw', () => {
       domain,
       body: {
         cid,
-        price: "" + Math.pow(10, 18)
+        value: "" + Math.pow(10, 18)
       }
     })
     let tx = await c0.token.mint([token], [])
@@ -107,7 +107,7 @@ describe('withdraw', () => {
       domain,
       body: {
         cid,
-        price: "" + Math.pow(10, 19)  // 10ETH
+        value: "" + Math.pow(10, 19)  // 10ETH
       }
     })
     let tx = await c0.token.mint([token], [])
@@ -179,7 +179,7 @@ describe('withdraw', () => {
       domain,
       body: {
         cid,
-        price: "" + Math.pow(10, 19)  // 10ETH
+        value: "" + Math.pow(10, 19)  // 10ETH
       }
     })
     tx = await c0.token.mint([token], [])
@@ -236,7 +236,7 @@ describe('withdraw', () => {
       domain,
       body: {
         cid,
-        price: "" + Math.pow(10, 19)  // 10ETH
+        value: "" + Math.pow(10, 19)  // 10ETH
       }
     })
     let tx = await c0.token.mint([token], [])
@@ -273,7 +273,7 @@ describe('withdraw', () => {
       domain,
       body: {
         cid,
-        price: "" + Math.pow(10, 19)  // 10ETH
+        value: "" + Math.pow(10, 19)  // 10ETH
       }
     })
     tx = await c0.token.mint([token], [])

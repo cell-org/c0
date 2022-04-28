@@ -50,7 +50,7 @@ describe('factory', () => {
       domain,
       body: {
         cid: cid,
-        price: "" + Math.pow(10, 16),
+        value: "" + Math.pow(10, 16),
         start: 0,
       }
     })
@@ -68,7 +68,7 @@ describe('factory', () => {
       domain,
       body: {
         cid: cid,
-        price: "" + Math.pow(10, 16),
+        value: "" + Math.pow(10, 16),
         start: 0,
       }
     })
@@ -82,7 +82,7 @@ describe('factory', () => {
       domain,
       body: {
         cid: cid,
-        price: "" + Math.pow(10, 16),
+        value: "" + Math.pow(10, 16),
         start: 0,
         end: ethers.BigNumber.from(2).pow(64).sub(1).toString()
       }
@@ -94,7 +94,7 @@ describe('factory', () => {
       domain,
       body: {
         cid,
-        price: "" + Math.pow(10, 16),
+         value: "" + Math.pow(10, 16),
         start: 0,
         end: ethers.BigNumber.from(2).pow(64).sub(1).toString()
       }
@@ -110,7 +110,7 @@ describe('factory', () => {
       domain: domain,
       body: {
         cid: cid,
-        price: "" + Math.pow(10, 18),
+        value: "" + Math.pow(10, 18),
         start: 0,
         end: ethers.BigNumber.from(2).pow(64).sub(1).toString()
       }
@@ -133,7 +133,7 @@ describe('factory', () => {
       domain: domain,
       body: {
         cid: cid,
-        price: "" + Math.pow(10, 18),
+        value: "" + Math.pow(10, 18),
         start: 0,
         end: ethers.BigNumber.from(2).pow(64).sub(1).toString()
       }
@@ -144,7 +144,5 @@ describe('factory', () => {
     owner = await c0.token.methods(domain.address).ownerOf(id(cidDigest)).call()
     expect(owner).to.equal(c0.account)
 
-  })
-  it('burn and mint again', async () => {
   })
 })
