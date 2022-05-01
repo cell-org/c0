@@ -63,7 +63,7 @@ describe('withdraw', () => {
         value: "" + Math.pow(10, 18)
       }
     })
-    let tx = await c0.token.mint([token], [])
+    let tx = await c0.token.send([token], [])
 
     balance.contract.beforeWithdraw = await web3.eth.getBalance(domain.address)
     balance.deployer.beforeWithdraw = await web3.eth.getBalance(c0.account)
@@ -110,7 +110,7 @@ describe('withdraw', () => {
         value: "" + Math.pow(10, 19)  // 10ETH
       }
     })
-    let tx = await c0.token.mint([token], [])
+    let tx = await c0.token.send([token], [])
 
     balance.contract.beforeWithdraw = await web3.eth.getBalance(domain.address)
     balance.deployer.beforeWithdraw = await web3.eth.getBalance(c0.account)
@@ -182,7 +182,7 @@ describe('withdraw', () => {
         value: "" + Math.pow(10, 19)  // 10ETH
       }
     })
-    tx = await c0.token.mint([token], [])
+    tx = await c0.token.send([token], [])
 
     let balance = {
       contract: {},
@@ -239,7 +239,7 @@ describe('withdraw', () => {
         value: "" + Math.pow(10, 19)  // 10ETH
       }
     })
-    let tx = await c0.token.mint([token], [])
+    let tx = await c0.token.send([token], [])
 
     // switch to account2 (not a withdrawer)
     await c0.init({ web3, key: process.env.RINKEBY_PRIVATE_KEY2 })
@@ -276,7 +276,7 @@ describe('withdraw', () => {
         value: "" + Math.pow(10, 19)  // 10ETH
       }
     })
-    tx = await c0.token.mint([token], [])
+    tx = await c0.token.send([token], [])
 
     balance.contract.afterMint = await web3.eth.getBalance(domain.address)
     balance.deployer.afterMint = await web3.eth.getBalance(c0.account)

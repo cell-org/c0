@@ -51,7 +51,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
   event StateUpdated(uint indexed state);
   event BaseURIUpdated(string uri);
   event NSUpdated(string name, string symbol);
-  bytes32 public constant BODY_TYPE_HASH = keccak256("Body(uint256 id,bool raw,address sender,uint128 value,uint64 start,uint64 end,address royaltyReceiver,uint96 royaltyAmount,bytes32 merkleHash,bytes32 puzzleHash)");
+  bytes32 public constant BODY_TYPE_HASH = keccak256("Body(uint256 id,bool raw,address sender,address receiver,uint128 value,uint64 start,uint64 end,address royaltyReceiver,uint96 royaltyAmount,bytes32 merkleHash,bytes32 puzzleHash)");
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //
   // Struct declaration
@@ -64,6 +64,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
     uint64 end;
     bool raw; // 0: dag-pb, 1: raw
     address sender;
+    address receiver;
     address royaltyReceiver;
     uint96 royaltyAmount;
     bytes32 merkleHash;
@@ -96,6 +97,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   mapping(uint256 => Royalty) public royalty;
   mapping(uint256 => bool) private raw;
+  mapping(uint256 => bool) private burned;
   Withdrawer public withdrawer;
   string public baseURI;
   uint public state;  // 0: open, 1: paused, 2: frozen
@@ -109,33 +111,40 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
     __EIP712_init(name, "1");
     __Ownable_init();
   }
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  //
+  // Allow direct receiving of funds
+  //
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   receive() external payable {}
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //
   // Token functions
   //
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  function give(Gift[] calldata gifts) external payable onlyOwner {
+  function gift(Gift[] calldata gifts) external payable onlyOwner {
     for(uint i=0;i<gifts.length;) {
-      Gift calldata gift = gifts[i];
-      _safeMint(gift.receiver, gift.id);
-      if (gift.royaltyReceiver != address(0x0)) {
-        royalty[gift.id] = Royalty(gift.royaltyReceiver, gift.royaltyAmount);
+      Gift calldata g = gifts[i];
+      _mint(g.receiver, g.id);
+      if (g.royaltyReceiver != address(0x0)) {
+        royalty[g.id] = Royalty(g.royaltyReceiver, g.royaltyAmount);
       }
       unchecked { ++i; }
     }
   }
-  function mint(Body[] calldata bodies, Proof[] calldata proofs) external payable {
+  function token(Body[] calldata bodies, Proof[] calldata proofs) external payable {
     require(state == 0, "0");
     uint val;
     for(uint i=0; i<bodies.length;) {
       Body calldata body = bodies[i];
       Proof calldata proof = proofs[i];
+      require(burned[body.id] == false);
       bytes32 bodyhash = keccak256(abi.encode(
         BODY_TYPE_HASH,
         body.id,
         body.raw,
         body.sender,
+        body.receiver,
         body.value,
         body.start,
         body.end,
@@ -162,7 +171,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
         require(proof.merkle.length > 0 && verify(body.merkleHash, proof.merkle, _msgSender()), "6");
       }
       // 6. Mint
-      _safeMint(_msgSender(), body.id);
+      _mint((body.receiver == address(0x0) ? _msgSender() : body.receiver), body.id);
       // 7. Set raw/dag-pb info
       if (body.raw) raw[body.id] = body.raw;
       // 8. Set royalty
@@ -180,6 +189,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
   function burn(uint _tokenId) external {
     require(_isApprovedOrOwner(_msgSender(), _tokenId), "9");
     _burn(_tokenId);
+    burned[_tokenId] = true;
   }
   function tokenURI(uint tokenId) public view override(ERC721Upgradeable) returns (string memory) {
     require(_exists(tokenId), "10");

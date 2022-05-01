@@ -23,7 +23,7 @@ const id = (x) => {
 }
 const c0 = new C0()
 var domain = {}
-describe('mint', () => {
+describe('royalty', () => {
   beforeEach(async () => {
     await hre.network.provider.send("hardhat_reset")
     await util.deploy();
@@ -54,7 +54,7 @@ describe('mint', () => {
         royaltyAmount: 10000
       }
     })
-    let tx = await c0.token.mint([token])
+    let tx = await c0.token.send([token])
 
     // 300 wei revenue => should receive 10000/1M = 1% => 3 wei
     let ro = await c0.token.methods(domain.address).royaltyInfo(token.body.id, 300).call()
@@ -67,7 +67,7 @@ describe('mint', () => {
       domain,
       body: { cid, }
     })
-    let tx = await c0.token.mint([token])
+    let tx = await c0.token.send([token])
 
     // 300 wei revenue => null address should receive 0 wei
     let ro = await c0.token.methods(domain.address).royaltyInfo(token.body.id, 300).call()
@@ -85,7 +85,7 @@ describe('mint', () => {
       }
     })
     console.log("token", token)
-    let tx = await c0.token.mint([token], [])
+    let tx = await c0.token.send([token], [])
     let owner = await c0.token.methods(domain.address).ownerOf(id(cidDigest)).call()
     console.log("owner", owner)
     expect(owner).to.equal(c0.account)

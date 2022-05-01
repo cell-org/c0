@@ -3,7 +3,6 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./C0.sol";
-import "hardhat/console.sol";
 contract Factory is OwnableUpgradeable {
   address public immutable implementation;
   constructor() {

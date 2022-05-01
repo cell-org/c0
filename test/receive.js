@@ -23,7 +23,7 @@ const id = (x) => {
 }
 const c0 = new C0()
 var domain = {}
-describe('mint', () => {
+describe('receive', () => {
   beforeEach(async () => {
     await hre.network.provider.send("hardhat_reset")
     await util.deploy();

@@ -24,7 +24,7 @@ const id = (x) => {
 }
 const c0 = new C0()
 var domain = {}
-describe('mint', () => {
+describe('tokenURI', () => {
   beforeEach(async () => {
     await hre.network.provider.send("hardhat_reset")
     await util.deploy();
@@ -52,7 +52,7 @@ describe('mint', () => {
       body: { cid: cid, }
     })
     console.log("TOKEN", token)
-    let tx = await c0.token.mint([token], [])
+    let tx = await c0.token.send([token], [])
     // the token URI should be "ipfs://:cid"
 
     let tokenURI = await c0.token.methods(domain.address).tokenURI(token.body.id).call()
@@ -65,7 +65,7 @@ describe('mint', () => {
       body: { cid: cid, }
     })
     console.log("TOKEN", token)
-    let tx = await c0.token.mint([token], [])
+    let tx = await c0.token.send([token], [])
 
 
     // setBaseURI
@@ -84,7 +84,7 @@ describe('mint', () => {
       body: { cid: cid, }
     })
     console.log("TOKEN", token)
-    let tx = await c0.token.mint([token], [])
+    let tx = await c0.token.send([token], [])
 
 
     // setBaseURI
@@ -104,7 +104,7 @@ describe('mint', () => {
       body: { cid: cid, }
     })
     console.log("TOKEN", token)
-    let tx = await c0.token.mint([token], [])
+    let tx = await c0.token.send([token], [])
 
     // setBaseURI
     await c0.token.methods(domain.address).setBaseURI("ipfs://").send()
@@ -121,7 +121,7 @@ describe('mint', () => {
       body: { cid: cid, }
     })
     console.log("TOKEN", token)
-    let tx = await c0.token.mint([token], [])
+    let tx = await c0.token.send([token], [])
     let tokenURI = await c0.token.methods(domain.address).tokenURI(token.body.id).call()
     expect(tokenURI).to.equal("ipfs://" + cid)
   })
@@ -137,7 +137,7 @@ describe('mint', () => {
       })
       tokens.push(token)
     }
-    await c0.token.mint(tokens, [])
+    await c0.token.send(tokens, [])
     for(let i=0; i<10; i++) {
       let tokenURI = await c0.token.methods(domain.address).tokenURI(tokens[i].body.id).call()
       expect(tokenURI).to.equal("ipfs://" + cids[i])
@@ -155,7 +155,7 @@ describe('mint', () => {
     console.log("TOKEN", token)
     expect(token.body.raw).to.equal(false)
 
-    await c0.token.mint([token])
+    await c0.token.send([token])
     const tokenURI = await c0.token.methods(domain.address).tokenURI(token.body.id).call()
     expect(tokenURI).to.equal("ipfs://" + cid)
   })
@@ -171,7 +171,7 @@ describe('mint', () => {
     console.log("TOKEN", token)
     expect(token.body.raw).to.equal(false)
 
-    await c0.token.mint([token])
+    await c0.token.send([token])
     const tokenURI = await c0.token.methods(domain.address).tokenURI(token.body.id).call()
     expect(tokenURI).to.equal("ipfs://" + cid)
   })
@@ -187,7 +187,7 @@ describe('mint', () => {
     console.log("TOKEN", token)
     expect(token.body.raw).to.equal(false)
 
-    await c0.token.mint([token])
+    await c0.token.send([token])
     const tokenURI = await c0.token.methods(domain.address).tokenURI(token.body.id).call()
     expect(tokenURI).to.equal("ipfs://" + cid)
   })
@@ -203,7 +203,7 @@ describe('mint', () => {
     console.log("TOKEN", token)
     expect(token.body.raw).to.equal(false)
 
-    await c0.token.mint([token])
+    await c0.token.send([token])
     const tokenURI = await c0.token.methods(domain.address).tokenURI(token.body.id).call()
     expect(tokenURI).to.equal("ipfs://" + cid)
   })
@@ -219,7 +219,7 @@ describe('mint', () => {
     console.log("TOKEN", token)
     expect(token.body.raw).to.equal(true)
 
-    await c0.token.mint([token])
+    await c0.token.send([token])
     const tokenURI = await c0.token.methods(domain.address).tokenURI(token.body.id).call()
     expect(tokenURI).to.equal("ipfs://" + cid)
   })
@@ -235,7 +235,7 @@ describe('mint', () => {
     console.log("TOKEN", token)
     expect(token.body.raw).to.equal(true)
 
-    await c0.token.mint([token])
+    await c0.token.send([token])
     const tokenURI = await c0.token.methods(domain.address).tokenURI(token.body.id).call()
     expect(tokenURI).to.equal("ipfs://" + cid)
   })
@@ -251,7 +251,7 @@ describe('mint', () => {
     console.log("TOKEN", token)
     expect(token.body.raw).to.equal(true)
 
-    await c0.token.mint([token])
+    await c0.token.send([token])
     const tokenURI = await c0.token.methods(domain.address).tokenURI(token.body.id).call()
     expect(tokenURI).to.equal("ipfs://" + cid)
   })

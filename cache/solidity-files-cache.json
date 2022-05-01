@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "/Users/x/Projects/cell/contracts/c0/contracts/C0.sol": {
-      "lastModificationDate": 1651127124086,
-      "contentHash": "1489e5e5584b70e252ef37f794181d02",
+      "lastModificationDate": 1651441436057,
+      "contentHash": "d03101d9eb46233449d77c34a0bd0c25",
       "sourceName": "contracts/C0.sol",
       "solcConfig": {
         "version": "0.8.4",
@@ -508,8 +508,8 @@
       ]
     },
     "/Users/x/Projects/cell/contracts/c0/contracts/Factory.sol": {
-      "lastModificationDate": 1651116490483,
-      "contentHash": "3cbfd61323168ae38dc26d902ba62123",
+      "lastModificationDate": 1651301287356,
+      "contentHash": "91d1945ca273bb3a069643da39872cee",
       "sourceName": "contracts/Factory.sol",
       "solcConfig": {
         "version": "0.8.4",
@@ -536,8 +536,7 @@
       "imports": [
         "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol",
         "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol",
-        "./C0.sol",
-        "hardhat/console.sol"
+        "./C0.sol"
       ],
       "versionPragmas": [
         "^0.8.4"

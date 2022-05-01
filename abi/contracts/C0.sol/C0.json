@@ -293,7 +293,7 @@
         "type": "tuple[]"
       }
     ],
-    "name": "give",
+    "name": "gift",
     "outputs": [],
     "stateMutability": "payable",
     "type": "function"
@@ -338,93 +338,6 @@
       }
     ],
     "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "id",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint128",
-            "name": "value",
-            "type": "uint128"
-          },
-          {
-            "internalType": "uint64",
-            "name": "start",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "end",
-            "type": "uint64"
-          },
-          {
-            "internalType": "bool",
-            "name": "raw",
-            "type": "bool"
-          },
-          {
-            "internalType": "address",
-            "name": "sender",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "royaltyReceiver",
-            "type": "address"
-          },
-          {
-            "internalType": "uint96",
-            "name": "royaltyAmount",
-            "type": "uint96"
-          },
-          {
-            "internalType": "bytes32",
-            "name": "merkleHash",
-            "type": "bytes32"
-          },
-          {
-            "internalType": "bytes32",
-            "name": "puzzleHash",
-            "type": "bytes32"
-          },
-          {
-            "internalType": "bytes",
-            "name": "signature",
-            "type": "bytes"
-          }
-        ],
-        "internalType": "struct C0.Body[]",
-        "name": "bodies",
-        "type": "tuple[]"
-      },
-      {
-        "components": [
-          {
-            "internalType": "bytes",
-            "name": "puzzle",
-            "type": "bytes"
-          },
-          {
-            "internalType": "bytes32[]",
-            "name": "merkle",
-            "type": "bytes32[]"
-          }
-        ],
-        "internalType": "struct C0.Proof[]",
-        "name": "proofs",
-        "type": "tuple[]"
-      }
-    ],
-    "name": "mint",
-    "outputs": [],
-    "stateMutability": "payable",
     "type": "function"
   },
   {
@@ -713,6 +626,98 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "id",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint128",
+            "name": "value",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint64",
+            "name": "start",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "end",
+            "type": "uint64"
+          },
+          {
+            "internalType": "bool",
+            "name": "raw",
+            "type": "bool"
+          },
+          {
+            "internalType": "address",
+            "name": "sender",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "receiver",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "royaltyReceiver",
+            "type": "address"
+          },
+          {
+            "internalType": "uint96",
+            "name": "royaltyAmount",
+            "type": "uint96"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "merkleHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "puzzleHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct C0.Body[]",
+        "name": "bodies",
+        "type": "tuple[]"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bytes",
+            "name": "puzzle",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes32[]",
+            "name": "merkle",
+            "type": "bytes32[]"
+          }
+        ],
+        "internalType": "struct C0.Proof[]",
+        "name": "proofs",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "token",
+    "outputs": [],
+    "stateMutability": "payable",
     "type": "function"
   },
   {

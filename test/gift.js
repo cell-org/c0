@@ -46,39 +46,51 @@ describe('gift', () => {
     domain.name = "Hello"
   })
   it('gift single token', async () => {
-    let gift = await c0.token.gift({
-      cid,
-      receiver: "0x502b2FE7Cc3488fcfF2E16158615AF87b4Ab5C41"
+    let gift = await c0.gift.create({
+      body: {
+        cid,
+        receiver: "0x502b2FE7Cc3488fcfF2E16158615AF87b4Ab5C41"
+      },
+      domain
     })
     console.log("gift", gift)
-    let tx = await c0.token.give([gift], domain)
-    let owner = await c0.token.methods(domain.address).ownerOf(gift.id).call()
+    let tx = await c0.gift.send([gift])
+    let owner = await c0.token.methods(domain.address).ownerOf(gift.body.id).call()
     console.log("owner", owner)
     expect(owner).to.equal("0x502b2FE7Cc3488fcfF2E16158615AF87b4Ab5C41")
   })
   it('gift multiple tokens', async () => {
     let gifts = []
     let cid1 = await nebulus.add(Buffer.from("alice"))
-    let gift1 = await c0.token.gift({ cid: cid1, receiver: util.alice.address })
+    let gift1 = await c0.gift.create({
+      body: { cid: cid1, receiver: util.alice.address },
+      domain
+    })
     gifts.push(gift1)
 
     let cid2 = await nebulus.add(Buffer.from("bob"))
-    let gift2 = await c0.token.gift({ cid: cid2, receiver: util.bob.address })
+    let gift2 = await c0.gift.create({
+      body: { cid: cid2, receiver: util.bob.address },
+      domain
+    })
     gifts.push(gift2)
 
     let cid3 = await nebulus.add(Buffer.from("deployer"))
-    let gift3 = await c0.token.gift({ cid: cid3, receiver: util.deployer.address })
+    let gift3 = await c0.gift.create({
+      body: { cid: cid3, receiver: util.deployer.address },
+      domain
+    })
     gifts.push(gift3)
 
     console.log("gifts", gifts)
-    let tx = await c0.token.give(gifts, domain)
-    let owner = await c0.token.methods(domain.address).ownerOf(gifts[0].id).call()
+    let tx = await c0.gift.send(gifts)
+    let owner = await c0.token.methods(domain.address).ownerOf(gifts[0].body.id).call()
     expect(owner).to.equal(util.alice.address)
 
-    owner = await c0.token.methods(domain.address).ownerOf(gifts[1].id).call()
+    owner = await c0.token.methods(domain.address).ownerOf(gifts[1].body.id).call()
     expect(owner).to.equal(util.bob.address)
 
-    owner = await c0.token.methods(domain.address).ownerOf(gifts[2].id).call()
+    owner = await c0.token.methods(domain.address).ownerOf(gifts[2].body.id).call()
     expect(owner).to.equal(util.deployer.address)
   })
 })

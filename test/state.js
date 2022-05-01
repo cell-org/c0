@@ -23,7 +23,7 @@ const id = (x) => {
 }
 const c0 = new C0()
 var domain = {}
-describe('mint', () => {
+describe('state', () => {
   beforeEach(async () => {
     await hre.network.provider.send("hardhat_reset")
     await util.deploy();
@@ -53,7 +53,7 @@ describe('mint', () => {
       domain,
       body: { cid, }
     })
-    tx = c0.token.mint([token])
+    tx = c0.token.send([token])
 
     // try to mint => should fail
     await expect(tx).to.be.revertedWith(0)
@@ -77,7 +77,7 @@ describe('mint', () => {
       domain,
       body: { cid, }
     })
-    tx = c0.token.mint([token])
+    tx = c0.token.send([token])
     await expect(tx).to.be.revertedWith("0")
   })
   it('once frozen, cannot reopen', async () => {
