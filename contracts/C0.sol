@@ -51,7 +51,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
   event StateUpdated(uint indexed state);
   event BaseURIUpdated(string uri);
   event NSUpdated(string name, string symbol);
-  bytes32 public constant BODY_TYPE_HASH = keccak256("Body(uint256 id,bool raw,address sender,address receiver,uint128 value,uint64 start,uint64 end,address royaltyReceiver,uint96 royaltyAmount,bytes32 merkleHash,bytes32 puzzleHash)");
+  bytes32 public constant BODY_TYPE_HASH = keccak256("Body(uint256 id,uint8 encoding,address sender,address receiver,uint128 value,uint64 start,uint64 end,address royaltyReceiver,uint96 royaltyAmount,bytes32 merkleHash,bytes32 puzzleHash)");
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //
   // Struct declaration
@@ -62,7 +62,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
     uint128 value;
     uint64 start;
     uint64 end;
-    bool raw; // 0: dag-pb, 1: raw
+    uint8 encoding; // 0: raw, 1: dag-pb
     address sender;
     address receiver;
     address royaltyReceiver;
@@ -76,7 +76,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
     address receiver;
     address royaltyReceiver;
     uint96 royaltyAmount;
-    bool raw; // 0: dag-pb, 1: raw
+    uint8 encoding; // 0: raw, 1: dag-pb
   }
   struct Proof {
     bytes puzzle;
@@ -96,7 +96,8 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
   //
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   mapping(uint256 => Royalty) public royalty;
-  mapping(uint256 => bool) private raw;
+  mapping(uint256 => bool) private encoding;
+  //mapping(uint256 => uint8) private encoding;
   mapping(uint256 => bool) private burned;
   Withdrawer public withdrawer;
   string public baseURI;
@@ -142,7 +143,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
       bytes32 bodyhash = keccak256(abi.encode(
         BODY_TYPE_HASH,
         body.id,
-        body.raw,
+        body.encoding,
         body.sender,
         body.receiver,
         body.value,
@@ -173,7 +174,8 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
       // 6. Mint
       _mint((body.receiver == address(0x0) ? _msgSender() : body.receiver), body.id);
       // 7. Set raw/dag-pb info
-      if (body.raw) raw[body.id] = body.raw;
+      //if (body.encoding != 0) encoding[body.id] = 1;//body.encoding;
+      if (body.encoding != 0) encoding[body.id] = true;
       // 8. Set royalty
       if (body.royaltyReceiver != address(0x0)) {
         royalty[body.id] = Royalty(body.royaltyReceiver, body.royaltyAmount);
@@ -196,7 +198,8 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
     bytes32 data = bytes32(tokenId);
     bytes memory alphabet = bytes("abcdefghijklmnopqrstuvwxyz234567");
     string memory base = (bytes(baseURI).length > 0 ? baseURI : "ipfs://");
-    bytes memory cid = bytes(abi.encodePacked(base, (raw[tokenId] ? "bafkrei" : "bafybei")));
+    //bytes memory cid = bytes(abi.encodePacked(base, (encoding[tokenId] == 0 ? "bafkrei" : "bafybei")));
+    bytes memory cid = bytes(abi.encodePacked(base, (encoding[tokenId] ? "bafybei" : "bafkrei")));
     uint bits = 2;
     uint buffer = 24121888;
     uint bitsPerChar = 5;

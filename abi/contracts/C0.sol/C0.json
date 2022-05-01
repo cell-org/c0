@@ -283,9 +283,9 @@
             "type": "uint96"
           },
           {
-            "internalType": "bool",
-            "name": "raw",
-            "type": "bool"
+            "internalType": "uint8",
+            "name": "encoding",
+            "type": "uint8"
           }
         ],
         "internalType": "struct C0.Gift[]",
@@ -653,9 +653,9 @@
             "type": "uint64"
           },
           {
-            "internalType": "bool",
-            "name": "raw",
-            "type": "bool"
+            "internalType": "uint8",
+            "name": "encoding",
+            "type": "uint8"
           },
           {
             "internalType": "address",

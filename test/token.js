@@ -13,6 +13,7 @@ const SYMBOL = "TS"
 const nebulus = new Nebulus()
 var f1
 const cid = "bafybeibfcfoxxarcrduavcl5uc2hugizg4k3ytlva64hev6xegjmcbu7va"
+//const cid = "bafkreicwqno6pzrospmpufqigjj6dn7ylo7si5reajybci22n55evjgv7y"
 const cid2 = "bafkreibwb3avav7qxnckwwzdzddmwp2xuogjtfgrdbgqlnzjquvg7chxpa"
 const parsed = CID.parse(cid).toString(base16.encoder)
 const parsed2 = CID.parse(cid2).toString(base16.encoder)
@@ -383,6 +384,7 @@ describe('send', () => {
         start: 0,
       }
     })
+    console.log("TOKEN", token)
     let tx = await c0.token.send([token])
     let owner = await c0.token.methods(domain.address).ownerOf(id(cidDigest)).call()
     console.log("owner", owner)

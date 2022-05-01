@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "/Users/x/Projects/cell/contracts/c0/contracts/C0.sol": {
-      "lastModificationDate": 1651441436057,
-      "contentHash": "d03101d9eb46233449d77c34a0bd0c25",
+      "lastModificationDate": 1651445696836,
+      "contentHash": "91a22d66a59d3f9bfeaf950fe860ee9c",
       "sourceName": "contracts/C0.sol",
       "solcConfig": {
         "version": "0.8.4",

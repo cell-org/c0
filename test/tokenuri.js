@@ -153,7 +153,7 @@ describe('tokenURI', () => {
       body: { cid: cid, }
     })
     console.log("TOKEN", token)
-    expect(token.body.raw).to.equal(false)
+    expect(token.body.encoding).to.equal(false)
 
     await c0.token.send([token])
     const tokenURI = await c0.token.methods(domain.address).tokenURI(token.body.id).call()
@@ -169,7 +169,7 @@ describe('tokenURI', () => {
       body: { cid: cid, }
     })
     console.log("TOKEN", token)
-    expect(token.body.raw).to.equal(false)
+    expect(token.body.encoding).to.equal(1)
 
     await c0.token.send([token])
     const tokenURI = await c0.token.methods(domain.address).tokenURI(token.body.id).call()
@@ -185,7 +185,7 @@ describe('tokenURI', () => {
       body: { cid: cid, }
     })
     console.log("TOKEN", token)
-    expect(token.body.raw).to.equal(false)
+    expect(token.body.encoding).to.equal(0)
 
     await c0.token.send([token])
     const tokenURI = await c0.token.methods(domain.address).tokenURI(token.body.id).call()
@@ -201,7 +201,7 @@ describe('tokenURI', () => {
       body: { cid: cid, }
     })
     console.log("TOKEN", token)
-    expect(token.body.raw).to.equal(false)
+    expect(token.body.encoding).to.equal(1)
 
     await c0.token.send([token])
     const tokenURI = await c0.token.methods(domain.address).tokenURI(token.body.id).call()
@@ -217,7 +217,7 @@ describe('tokenURI', () => {
       body: { cid: cid, }
     })
     console.log("TOKEN", token)
-    expect(token.body.raw).to.equal(true)
+    expect(token.body.encoding).to.equal(0)
 
     await c0.token.send([token])
     const tokenURI = await c0.token.methods(domain.address).tokenURI(token.body.id).call()
@@ -233,7 +233,7 @@ describe('tokenURI', () => {
       body: { cid: cid, }
     })
     console.log("TOKEN", token)
-    expect(token.body.raw).to.equal(true)
+    expect(token.body.encoding).to.equal(0)
 
     await c0.token.send([token])
     const tokenURI = await c0.token.methods(domain.address).tokenURI(token.body.id).call()
@@ -249,7 +249,7 @@ describe('tokenURI', () => {
       body: { cid: cid, }
     })
     console.log("TOKEN", token)
-    expect(token.body.raw).to.equal(true)
+    expect(token.body.encoding).to.equal(0)
 
     await c0.token.send([token])
     const tokenURI = await c0.token.methods(domain.address).tokenURI(token.body.id).call()
