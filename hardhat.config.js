@@ -54,7 +54,8 @@ module.exports = {
     enabled: true,
   },
   solidity: {
-    version: "0.8.4",
+    //version: "0.8.4",
+    version: "0.8.13",
     settings: {
       optimizer: {
         enabled: true,
@@ -72,11 +73,21 @@ module.exports = {
       gas: 12000000,
       blockGasLimit: 0x1fffffffffffff,
       allowUnlimitedContractSize: true,
+//      accounts: [{
+//        privateKey: process.env.CLEAN2_PRIVATE_KEY,
+//        balance: "100000000000000000"
+//      }]
+    },
+    mumbai: {
+      url: "https://rpc-mumbai.maticvigil.com",
+//      accounts: [process.env.RINKEBY_PRIVATE_KEY]
+      accounts: [process.env.CLEAN2_PRIVATE_KEY]
     },
     rinkeby: {
       url: process.env.RINKEBY,
-      timeout: 1000 * 60 * 60 * 24, // 1 day
-      accounts: [process.env.RINKEBY_PRIVATE_KEY],
+//      timeout: 1000 * 60 * 60 * 24, // 1 day
+//      accounts: [process.env.RINKEBY_PRIVATE_KEY],
+      accounts: [process.env.CLEAN2_PRIVATE_KEY],
     },
     mainnet: {
 //      gasPrice: 74000000000,

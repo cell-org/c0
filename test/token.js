@@ -12,8 +12,8 @@ const NAME = "test"
 const SYMBOL = "TS"
 const nebulus = new Nebulus()
 var f1
-const cid = "bafybeibfcfoxxarcrduavcl5uc2hugizg4k3ytlva64hev6xegjmcbu7va"
-//const cid = "bafkreicwqno6pzrospmpufqigjj6dn7ylo7si5reajybci22n55evjgv7y"
+//const cid = "bafybeibfcfoxxarcrduavcl5uc2hugizg4k3ytlva64hev6xegjmcbu7va"
+const cid = "bafkreicwqno6pzrospmpufqigjj6dn7ylo7si5reajybci22n55evjgv7y"
 const cid2 = "bafkreibwb3avav7qxnckwwzdzddmwp2xuogjtfgrdbgqlnzjquvg7chxpa"
 const parsed = CID.parse(cid).toString(base16.encoder)
 const parsed2 = CID.parse(cid2).toString(base16.encoder)
@@ -31,6 +31,11 @@ describe('send', () => {
     await c0.init({ web3, key: process.env.RINKEBY_PRIVATE_KEY })
     // get address for the custom wallet
     // send some funds to the custom wallet address so it has the money to do stuff
+    console.log("factory address", util.factory.address)
+
+    let implementation = await c0.collection.methods(util.factory.address).implementation().call()
+    console.log("implementation", implementation)
+
     let tx0 = await web3.eth.sendTransaction({
       from: util.deployer.address,
       to: c0.account,
@@ -133,7 +138,7 @@ describe('send', () => {
     })
     // try to mint as the first account => should fail
     let tx = c0.token.send([token], [])
-    await expect(tx).to.be.revertedWith("2")
+    await expect(tx).to.be.revertedWith("3")
 
     // 2.
     // create a token for the first account as the sender 
@@ -147,7 +152,7 @@ describe('send', () => {
     // try to mint as the second account => should fail
     await c0.init({ web3, key: process.env.RINKEBY_PRIVATE_KEY_2 })
     let tx2 = c0.token.send([token2], [])
-    await expect(tx2).to.be.revertedWith("2")
+    await expect(tx2).to.be.revertedWith("3")
 
     // 3.
     // create a token for the second account as the sender
@@ -244,7 +249,7 @@ describe('send', () => {
       body: { cid: cid, }
     })
     let tx = c0.token.send([token], [])
-    await expect(tx).to.be.revertedWith("1");
+    await expect(tx).to.be.revertedWith("2");
 
   })
   it('mint value must match: single mint', async () => {
@@ -322,7 +327,7 @@ describe('send', () => {
     let tx = c0.token.send([token], [], {
       value: "" + Math.pow(10, 18)
     })
-    await expect(tx).to.be.revertedWith("3");
+    await expect(tx).to.be.revertedWith("4");
 
     // wait 6 seconds and try to mint again => should work
     //await new Promise(resolve => setTimeout(resolve, 10000));
@@ -363,7 +368,7 @@ describe('send', () => {
     await network.provider.send("evm_mine")
 
     let tx = c0.token.send([token], [])
-    await expect(tx).to.be.revertedWith("4");
+    await expect(tx).to.be.revertedWith("5");
   })
   it('cannot mint a token with a sender attribute assigned to someone else', async () => {
     let token = await c0.token.create({
@@ -374,21 +379,7 @@ describe('send', () => {
       }
     })
     let tx = c0.token.send([token])
-    await expect(tx).to.be.revertedWith("2");
-  })
-  it.only('mint and burn', async () => {
-    let token = await c0.token.create({
-      domain,
-      body: {
-        cid: cid,
-        start: 0,
-      }
-    })
-    console.log("TOKEN", token)
-    let tx = await c0.token.send([token])
-    let owner = await c0.token.methods(domain.address).ownerOf(id(cidDigest)).call()
-    console.log("owner", owner)
-    expect(owner).to.equal(c0.account)
+    await expect(tx).to.be.revertedWith("3");
   })
   it('mint one', async () => {
     let token = await c0.token.create({
@@ -444,7 +435,7 @@ describe('send', () => {
     expect(owner1).to.equal(c0.account)
     expect(owner2).to.equal(c0.account)
   })
-  it('mint single', async () => {
+  it.only('mint single', async () => {
     let token = await c0.token.create({
       domain,
       body: { cid }
@@ -484,7 +475,7 @@ describe('send', () => {
     console.log("token", token)
     console.log("sender", c0.account)
     let tx = c0.token.send([token], [])
-    await expect(tx).to.be.revertedWith("6")
+    await expect(tx).to.be.revertedWith("7")
   })
   it('mint with hash puzzle', async () => {
 
@@ -513,7 +504,7 @@ describe('send', () => {
     })
     console.log("token", token)
     let tx = c0.token.send([token], [{ puzzle: "this is not a secret" }])
-    await expect(tx).to.be.revertedWith("5")
+    await expect(tx).to.be.revertedWith("6")
   })
   it('merkle proof based auth', async () => {
     await c0.init({ web3, key: process.env.RINKEBY_PRIVATE_KEY_2 })
@@ -540,7 +531,7 @@ describe('send', () => {
 
     // try to mint as owner => should fail because not part of the tree
     let tx = c0.token.send([token])
-    await expect(tx).to.be.revertedWith("6")
+    await expect(tx).to.be.revertedWith("7")
 
     // try to mint as account2 => should work because part of the tree
 

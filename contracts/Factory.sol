@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.13;
 import "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./C0.sol";
 contract Factory is OwnableUpgradeable {
   address public immutable implementation;
   constructor() {
-    implementation = address(new C0());
+    implementation = address(new C0 { salt: bytes32(uint(1)) }());
     __Ownable_init();
   }
   function genesis(uint _index, string calldata name, string calldata symbol) external payable returns (address) {

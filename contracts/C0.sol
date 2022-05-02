@@ -34,7 +34,7 @@
 //    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.13;
 import "./ERC721.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -96,8 +96,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
   //
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   mapping(uint256 => Royalty) public royalty;
-  mapping(uint256 => bool) private encoding;
-  //mapping(uint256 => uint8) private encoding;
+  mapping(uint256 => uint8) public encoding;
   mapping(uint256 => bool) private burned;
   Withdrawer public withdrawer;
   string public baseURI;
@@ -139,7 +138,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
     for(uint i=0; i<bodies.length;) {
       Body calldata body = bodies[i];
       Proof calldata proof = proofs[i];
-      require(burned[body.id] == false);
+      require(burned[body.id] == false, "1");
       bytes32 bodyhash = keccak256(abi.encode(
         BODY_TYPE_HASH,
         body.id,
@@ -155,27 +154,29 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
         body.puzzleHash
       ));
       // 1. Signature check
-      require(_hashTypedDataV4(bodyhash).recover(body.signature) == owner(), "1");
+      require(_hashTypedDataV4(bodyhash).recover(body.signature) == owner(), "2");
       // 2. Sender check
       // if body.sender is specified, _msgSender() must equal body.sender
       // if body.sender is not specified, anyone can mint
-      if (body.sender != address(0x0)) require(body.sender == _msgSender(), "2");
+      if (body.sender != address(0x0)) require(body.sender == _msgSender(), "3");
       // 3. Time check
-      require(body.start <= block.timestamp, "3");
-      require(body.end >= block.timestamp, "4");
+      require(body.start <= block.timestamp, "4");
+      require(body.end >= block.timestamp, "5");
       // 4. Hash preimage proof => the hash of the solution equals the puzzle
       if (body.puzzleHash != 0) {
-        require(proof.puzzle.length > 0 && keccak256(proof.puzzle) == body.puzzleHash, "5");
+        require(proof.puzzle.length > 0 && keccak256(proof.puzzle) == body.puzzleHash, "6");
       }
       // 5. Sender merkle proof => the computed root of the proof.sender + msg.sender matches the sender merkle root (body.senders)
       if (body.merkleHash != 0) {
-        require(proof.merkle.length > 0 && verify(body.merkleHash, proof.merkle, _msgSender()), "6");
+        require(proof.merkle.length > 0 && verify(body.merkleHash, proof.merkle, _msgSender()), "7");
       }
       // 6. Mint
-      _mint((body.receiver == address(0x0) ? _msgSender() : body.receiver), body.id);
+      _mint(
+        (body.receiver == address(0x0) ? _msgSender() : body.receiver), 
+        body.id
+      );
       // 7. Set raw/dag-pb info
-      //if (body.encoding != 0) encoding[body.id] = 1;//body.encoding;
-      if (body.encoding != 0) encoding[body.id] = true;
+      if (body.encoding != 0) encoding[body.id] = body.encoding;
       // 8. Set royalty
       if (body.royaltyReceiver != address(0x0)) {
         royalty[body.id] = Royalty(body.royaltyReceiver, body.royaltyAmount);
@@ -198,8 +199,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
     bytes32 data = bytes32(tokenId);
     bytes memory alphabet = bytes("abcdefghijklmnopqrstuvwxyz234567");
     string memory base = (bytes(baseURI).length > 0 ? baseURI : "ipfs://");
-    //bytes memory cid = bytes(abi.encodePacked(base, (encoding[tokenId] == 0 ? "bafkrei" : "bafybei")));
-    bytes memory cid = bytes(abi.encodePacked(base, (encoding[tokenId] ? "bafybei" : "bafkrei")));
+    bytes memory cid = bytes(abi.encodePacked(base, (encoding[tokenId] == 0 ? "bafkrei" : "bafybei")));
     uint bits = 2;
     uint buffer = 24121888;
     uint bitsPerChar = 5;
