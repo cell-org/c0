@@ -435,7 +435,7 @@ describe('send', () => {
     expect(owner1).to.equal(c0.account)
     expect(owner2).to.equal(c0.account)
   })
-  it.only('mint single', async () => {
+  it('mint single', async () => {
     let token = await c0.token.create({
       domain,
       body: { cid }

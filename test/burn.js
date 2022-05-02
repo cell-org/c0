@@ -62,8 +62,39 @@ describe('send', () => {
 
 
     // burn gets rid of the token
-    tx = await c0.token.methods(domain.address).burn(id(cidDigest)).send()
+    tx = await c0.token.methods(domain.address).burn([id(cidDigest)]).send()
     owner = c0.token.methods(domain.address).ownerOf(id(cidDigest)).call()
+
+    await expect(owner).to.be.revertedWith("ERC721: owner query for nonexistent token")
+  })
+  it('multi burn', async() => {
+    let token = await c0.token.create({
+      domain,
+      body: {
+        cid: cid,
+      }
+    })
+    console.log("TOKEN", token)
+    //let tx = await c0.token.send([token])
+
+    let token2 = await c0.token.create({
+      domain,
+      body: {
+        cid: cid2,
+      }
+    })
+    let tx = await c0.token.send([token, token2])
+
+    let owner = await c0.token.methods(domain.address).ownerOf(id(cidDigest)).call()
+    console.log("owner", owner)
+    expect(owner).to.equal(c0.account)
+
+
+    // burn gets rid of the token
+    tx = await c0.token.methods(domain.address).burn([id(cidDigest), id(cidDigest2)]).send()
+    owner = c0.token.methods(domain.address).ownerOf(id(cidDigest)).call()
+    await expect(owner).to.be.revertedWith("ERC721: owner query for nonexistent token")
+    owner = c0.token.methods(domain.address).ownerOf(id(cidDigest2)).call()
 
     await expect(owner).to.be.revertedWith("ERC721: owner query for nonexistent token")
   })
@@ -79,7 +110,7 @@ describe('send', () => {
     let tx = await c0.token.send([token])
 
     // burn gets rid of the token
-    tx = await c0.token.methods(domain.address).burn(id(cidDigest)).send()
+    tx = await c0.token.methods(domain.address).burn([id(cidDigest)]).send()
 
     tx = c0.token.send([token])
     await expect(tx).to.be.revertedWith("1")
@@ -97,7 +128,7 @@ describe('send', () => {
     let tx = await c0.token.send([token])
 
     // burn gets rid of the token
-    tx = c0.token.methods(domain.address).burn(id(cidDigest)).send()
+    tx = c0.token.methods(domain.address).burn([id(cidDigest)]).send()
     await expect(tx).to.be.revertedWith("9")
 
   })

@@ -97,7 +97,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   mapping(uint256 => Royalty) public royalty;
   mapping(uint256 => uint8) public encoding;
-  mapping(uint256 => bool) private burned;
+  mapping(uint256 => address) private burned;
   Withdrawer public withdrawer;
   string public baseURI;
   uint public state;  // 0: open, 1: paused, 2: frozen
@@ -138,7 +138,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
     for(uint i=0; i<bodies.length;) {
       Body calldata body = bodies[i];
       Proof calldata proof = proofs[i];
-      require(burned[body.id] == false, "1");
+      require(burned[body.id] == address(0x0), "1");
       bytes32 bodyhash = keccak256(abi.encode(
         BODY_TYPE_HASH,
         body.id,
@@ -189,10 +189,16 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
     // 9. Revert everything if not enough money was sent
     require(val == msg.value, "8");
   }
-  function burn(uint _tokenId) external {
-    require(_isApprovedOrOwner(_msgSender(), _tokenId), "9");
-    _burn(_tokenId);
-    burned[_tokenId] = true;
+  function burn(uint[] calldata _tokenIds) external {
+    for(uint i=0; i<_tokenIds.length;) {
+      uint _tokenId = _tokenIds[i];
+      require(_isApprovedOrOwner(_msgSender(), _tokenId), "9");
+      _burn(_tokenId);
+      burned[_tokenId] = _msgSender();
+      unchecked {
+        ++i;
+      }
+    }
   }
   function tokenURI(uint tokenId) public view override(ERC721Upgradeable) returns (string memory) {
     require(_exists(tokenId), "10");
