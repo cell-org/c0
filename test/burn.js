@@ -49,7 +49,7 @@ describe('send', () => {
     domain.chainId = await web3.eth.getChainId()
     domain.name = "Hello"
   })
-  it.only('burning works', async () => {
+  it('burning works', async () => {
     let token = await c0.token.create({
       domain,
       body: {
@@ -134,7 +134,7 @@ describe('send', () => {
 
     // burn gets rid of the token
     tx = c0.token.methods(domain.address).burn([id(cidDigest)]).send()
-    await expect(tx).to.be.revertedWith("9")
+    await expect(tx).to.be.revertedWith("11")
 
   })
   it('mint with burn condition', async() => {
@@ -169,7 +169,13 @@ describe('send', () => {
       domain,
       body: {
         cid: cid3,
-        burned: [id(cidDigest), id(cidDigest2)]
+        burned: [{
+          address: "0x0000000000000000000000000000000000000000",
+          id: id(cidDigest)
+        }, {
+          address: "0x0000000000000000000000000000000000000000",
+          id: id(cidDigest2)
+        }]
       }
     })
     console.log("nextgen", next_gen)
@@ -186,7 +192,7 @@ describe('send', () => {
     expect(owner).to.equal(c0.account)
 
   })
-  it.only('try to mint without meeting the burn condition => fail', async () => {
+  it('try to mint without meeting the burn condition => fail', async () => {
     let tokens_to_burn = [
       await c0.token.create({
         domain,
@@ -201,6 +207,7 @@ describe('send', () => {
         }
       })
     ]
+    console.log(tokens_to_burn)
     let tx = await c0.token.send(tokens_to_burn)
 
     let owner = await c0.token.methods(domain.address).ownerOf(id(cidDigest)).call()
@@ -218,7 +225,11 @@ describe('send', () => {
       domain,
       body: {
         cid: cid3,
-        burned: [id(cidDigest), id(cidDigest2)]
+        burned: [{
+          id: id(cidDigest)
+        }, {
+          id: id(cidDigest2)
+        }]
       }
     })
     console.log("nextgen", next_gen)

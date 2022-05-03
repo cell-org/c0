@@ -55,7 +55,8 @@ module.exports = {
   },
   solidity: {
     //version: "0.8.4",
-    version: "0.8.13",
+    version: "0.8.9",
+    //version: "0.8.13",
     settings: {
       optimizer: {
         enabled: true,
@@ -68,11 +69,18 @@ module.exports = {
   },
   networks: {
     hardhat: {
+//      forking: {
+//        url: process.env.MAINNET,
+//        //url: process.env.RINKEBY
+//        blockNumber: 14705649
+//
+//      },
       chainId: 1337,
       timeout: 1000 * 60 * 60 * 24, // 1 day
       gas: 12000000,
       blockGasLimit: 0x1fffffffffffff,
       allowUnlimitedContractSize: true,
+
 //      accounts: [{
 //        privateKey: process.env.CLEAN2_PRIVATE_KEY,
 //        balance: "100000000000000000"
@@ -80,14 +88,14 @@ module.exports = {
     },
     mumbai: {
       url: "https://rpc-mumbai.maticvigil.com",
-//      accounts: [process.env.RINKEBY_PRIVATE_KEY]
-      accounts: [process.env.CLEAN2_PRIVATE_KEY]
+      accounts: [process.env.RINKEBY_PRIVATE_KEY]
+//      accounts: [process.env.CLEAN2_PRIVATE_KEY]
     },
     rinkeby: {
       url: process.env.RINKEBY,
 //      timeout: 1000 * 60 * 60 * 24, // 1 day
-//      accounts: [process.env.RINKEBY_PRIVATE_KEY],
-      accounts: [process.env.CLEAN2_PRIVATE_KEY],
+      accounts: [process.env.RINKEBY_PRIVATE_KEY],
+//      accounts: [process.env.CLEAN2_PRIVATE_KEY],
     },
     mainnet: {
 //      gasPrice: 74000000000,

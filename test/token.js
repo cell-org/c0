@@ -24,32 +24,70 @@ const id = (x) => {
 }
 const c0 = new C0()
 var domain = {}
+const fork = async (net) => {
+  let f;
+  if (net === "mainnet") {
+    f = {
+      jsonRpcUrl: process.env.MAINNET,
+      blockNumber: 14705649
+    }
+  } else if (net === "rinkeby") {
+    f = {
+      jsonRpcUrl: process.env.RINKEBY,
+      blockNumber: 10612780
+    }
+  }
+  await hre.network.provider.request({
+    method: "hardhat_reset",
+    params: [ { forking: f }, ],
+  });
+  await util.deploy();
+  await c0.init({ web3, key: process.env.RINKEBY_PRIVATE_KEY })
+  let tx0 = await web3.eth.sendTransaction({
+    from: util.deployer.address,
+    to: c0.account,
+    value: "" + Math.pow(10, 20)
+  })
+  let tx1 = await c0.collection.create({
+    factory: util.factory.address,
+    index: 0,
+    name: "Hello",
+    symbol: "WORLD"
+  })
+  domain.address = tx1.logs[0].address
+  domain.chainId = await web3.eth.getChainId()
+  domain.name = "Hello"
+}
+const bootstrap = async () => {
+  await hre.network.provider.send("hardhat_reset")
+  await util.deploy();
+  await c0.init({ web3, key: process.env.RINKEBY_PRIVATE_KEY })
+  // get address for the custom wallet
+  // send some funds to the custom wallet address so it has the money to do stuff
+  console.log("factory address", util.factory.address)
+
+  let implementation = await c0.collection.methods(util.factory.address).implementation().call()
+  console.log("implementation", implementation)
+
+  let tx0 = await web3.eth.sendTransaction({
+    from: util.deployer.address,
+    to: c0.account,
+    value: "" + Math.pow(10, 20)
+  })
+  let tx1 = await c0.collection.create({
+    factory: util.factory.address,
+    index: 0,
+    name: "Hello",
+    symbol: "WORLD"
+  })
+  domain.address = tx1.logs[0].address
+  domain.chainId = await web3.eth.getChainId()
+  domain.name = "Hello"
+}
+
 describe('send', () => {
   beforeEach(async () => {
-    await hre.network.provider.send("hardhat_reset")
-    await util.deploy();
-    await c0.init({ web3, key: process.env.RINKEBY_PRIVATE_KEY })
-    // get address for the custom wallet
-    // send some funds to the custom wallet address so it has the money to do stuff
-    console.log("factory address", util.factory.address)
-
-    let implementation = await c0.collection.methods(util.factory.address).implementation().call()
-    console.log("implementation", implementation)
-
-    let tx0 = await web3.eth.sendTransaction({
-      from: util.deployer.address,
-      to: c0.account,
-      value: "" + Math.pow(10, 20)
-    })
-    let tx1 = await c0.collection.create({
-      factory: util.factory.address,
-      index: 0,
-      name: "Hello",
-      symbol: "WORLD"
-    })
-    domain.address = tx1.logs[0].address
-    domain.chainId = await web3.eth.getChainId()
-    domain.name = "Hello"
+    await bootstrap()
   })
   it('send duplicate tokens should fail', async () => {
     let token = await c0.token.create({
@@ -435,7 +473,7 @@ describe('send', () => {
     expect(owner1).to.equal(c0.account)
     expect(owner2).to.equal(c0.account)
   })
-  it('mint single', async () => {
+  it.only('mint single', async () => {
     let token = await c0.token.create({
       domain,
       body: { cid }
@@ -542,5 +580,135 @@ describe('send', () => {
 
     let owner = await c0.token.methods(domain.address).ownerOf(token.body.id).call()
     expect(owner).to.equal(account2)
+  })
+  it('mint based on local ownership', async () => {
+
+    // try minting with a token that I don't own yet
+
+    await c0.init({ web3, key: process.env.RINKEBY_PRIVATE_KEY })
+    let token2 = await c0.token.create({
+      domain,
+      body: {
+        cid: cid2,
+        owns: [{
+          id: id(cidDigest)
+        }]
+      }
+    })
+    console.log("token2", token2)
+
+    // The cid1 hasn't been minted yet so it should fail
+    let tx = c0.token.send([token2])
+    await expect(tx).to.be.revertedWith("ERC721: owner query for nonexistent token")
+
+    //mint cid1 but to account2
+    await c0.init({ web3, key: process.env.RINKEBY_PRIVATE_KEY_2 })
+    let account2 = c0.account
+    // send some funds to account2
+    let tx0 = await web3.eth.sendTransaction({
+      from: util.deployer.address,
+      to: account2,
+      value: "" + Math.pow(10, 20)
+    })
+
+    await c0.init({ web3, key: process.env.RINKEBY_PRIVATE_KEY })
+    let token1 = await c0.token.create({
+      domain,
+      body: {
+        cid: cid,
+        receiver: account2
+      }
+    })
+    console.log("token1", token1)
+    tx = await c0.token.send([token1])
+    let owner = await c0.token.methods(domain.address).ownerOf(token1.body.id).call()
+    console.log("owner", owner)
+    expect(owner).to.equal(account2)
+
+    // switch to account1 and try to mint the token2 again => should fail because account1 doesn't own token1
+    // try to mint token2 => should fail again because account1 doesn't own token1
+    // and you need token1 to mint token2
+    // account2 owns token1
+    tx = c0.token.send([token2])
+    await expect(tx).to.be.revertedWith("9")
+
+    // switch to account2 and try to mint token2
+    await c0.init({ web3, key: process.env.RINKEBY_PRIVATE_KEY_2 })
+    tx = await c0.token.send([token2])
+
+    owner = await c0.token.methods(domain.address).ownerOf(token2.body.id).call()
+    console.log("owner", owner)
+    expect(owner).to.equal(account2)
+
+
+
+
+//    let token1 = await c0.token.create({
+//      domain,
+//      body: { cid, }
+//    })
+//    let tx = await c0.token.send([token1])
+//
+//    let owner = await c0.token.methods(domain.address).ownerOf(token1.id).call()
+//    console.log("owner", owner)
+//    expect(owner).to.equal(c0.account)
+//    console.log("token1", token1)
+//
+  })
+  it('mint based on remote collection ownership', async () => {
+    await fork("mainnet")
+
+    // sanity check => check the owner
+    const abi = [{
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "ownerOf",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }]
+    const contract = new web3.eth.Contract(abi, "0x023457063ac8f3cdbc75d910183b57c873b11d34")
+    let owner = await contract.methods.ownerOf(1).call()
+    await expect(owner).to.equal("0x73316d4224263496201c3420b36Cdda9c0249574")
+
+    let token = await c0.token.create({
+      domain,
+      body: {
+        cid: cid2,
+        owns: [{
+//          collection: "0x3ad4a8773a078c6a2fd4e4aaf86c4e95d63143f2",
+//          id: 5
+          collection: "0x023457063ac8f3cdbc75d910183b57c873b11d34",
+          id: 1
+        }]
+      }
+    })
+
+
+    // Account1 owns the NFT 0x023457063ac8f3cdbc75d910183b57c873b11d34/1
+    // Try to mint from account2 => should fail
+    await c0.init({ web3, key: process.env.RINKEBY_PRIVATE_KEY2 })
+    tx = c0.token.send([token])
+    await expect(tx).to.be.revertedWith("9");
+
+    // Now switch back to account1 and mint
+    await c0.init({ web3, key: process.env.RINKEBY_PRIVATE_KEY })
+    tx = await c0.token.send([token])
+
+    owner = await c0.token.methods(domain.address).ownerOf(token.body.id).call()
+    console.log("owner", owner)
+    expect(owner).to.equal(c0.account)
+
   })
 })
