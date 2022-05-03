@@ -143,6 +143,15 @@ describe('tokenURI', () => {
       expect(tokenURI).to.equal("ipfs://" + cids[i])
     }
   })
+  it("tokenURI returns error when the token doesnt exist", async () => {
+    let token = await c0.token.create({
+      domain,
+      body: { cid: cid2, }
+    })
+    await c0.token.send([token])
+    let tokenURI = c0.token.methods(domain.address).tokenURI(1).call()
+    await expect(tokenURI).to.be.revertedWith("ERC721Metadata: URI query for nonexistent token")
+  })
   it("large video file => dag-pb encoding", async () => {
     const buf = await fs.promises.readFile(__dirname + "/oceans.mp4")
     let cid = await nebulus.add(buf)

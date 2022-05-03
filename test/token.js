@@ -270,7 +270,7 @@ describe('send', () => {
     let tx = c0.token.send([token], [], {
       value: "" + Math.pow(10, 17)
     })
-    await expect(tx).to.be.revertedWith("8");
+    await expect(tx).to.be.revertedWith("10");
 
     // correct amount => should succeed
     let tx2 = await c0.token.send([token], [], {
@@ -301,7 +301,7 @@ describe('send', () => {
     let tx = c0.token.send(tokens, [], {
       value: "" + Math.pow(10, 16)
     })
-    await expect(tx).to.be.revertedWith("8");
+    await expect(tx).to.be.revertedWith("10");
 
     // Correct amount => should succeed
     let tx2 = await c0.token.send(tokens, [], {

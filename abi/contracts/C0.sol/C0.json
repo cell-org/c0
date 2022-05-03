@@ -692,6 +692,11 @@
             "type": "address"
           },
           {
+            "internalType": "uint256[]",
+            "name": "burned",
+            "type": "uint256[]"
+          },
+          {
             "internalType": "uint96",
             "name": "royaltyAmount",
             "type": "uint96"
