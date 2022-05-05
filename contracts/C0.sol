@@ -36,6 +36,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 pragma solidity ^0.8.9;
 import "./ERC721.sol";
+import "hardhat/console.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/draft-EIP712Upgradeable.sol";
@@ -43,6 +44,7 @@ import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.
 interface IToken {
   function burned(uint256 tokenId) external view returns (address);
   function ownerOf(uint256 tokenId) external view returns (address);
+  function balanceOf(address account) external view returns (uint256);
 }
 contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgradeable {
   using ECDSAUpgradeable for bytes32;
@@ -54,14 +56,15 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
   event StateUpdated(uint indexed state);
   event BaseURIUpdated(string uri);
   event NSUpdated(string name, string symbol);
-  bytes32 public constant TOKEN_TYPE_HASH = keccak256("Token(address collection,uint256 id)");
-  bytes32 public constant BODY_TYPE_HASH = keccak256("Body(uint256 id,uint8 encoding,address sender,address receiver,uint128 value,uint64 start,uint64 end,address royaltyReceiver,uint96 royaltyAmount,Token[] burned,Token[] owns,bytes32 merkleHash,bytes32 puzzleHash)Token(address collection,uint256 id)");
+  bytes32 public constant TOKEN_TYPE_HASH = keccak256("Token(address addr,uint256 id)");
+  bytes32 public constant BODY_TYPE_HASH = keccak256("Body(uint256 id,uint8 encoding,address sender,address receiver,uint128 value,uint64 start,uint64 end,address royaltyReceiver,uint96 royaltyAmount,bytes32 merkleHash,bytes32 puzzleHash,Token[] burned,Token[] owns,Token[] balance)Token(address addr,uint256 id)");
+  bytes32 private constant EMPTY_ARRAY_HASH = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470; // keccak256(abi.encodePacked(new bytes32[](0)))
 
   //
   // Struct declaration
   //
   struct Token {
-    address collection;
+    address addr;
     uint256 id;
   }
   struct Body {
@@ -73,11 +76,12 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
     address sender;
     address receiver;
     address royaltyReceiver;
-    Token[] burned;
-    Token[] owns;
     uint96 royaltyAmount;
     bytes32 merkleHash;
     bytes32 puzzleHash;
+    Token[] burned;
+    Token[] owns;
+    Token[] balance;
     bytes signature;
   }
   struct Gift {
@@ -100,8 +104,9 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
     bool permanent;
   }
   struct Hash {
-    bytes32[] burner;
-    bytes32[] owner;
+    bytes32[] burn;
+    bytes32[] own;
+    bytes32[] balance;
   }
 
   //
@@ -160,50 +165,89 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
       //
       // 2. Signature check
       //
-      Hash memory hash = Hash(new bytes32[](body.burned.length), new bytes32[](body.owns.length));
-      if (body.burned.length > 0) {
-        for(uint k=0; k<body.burned.length;) {
-          hash.burner[k] = keccak256(abi.encode(
-            TOKEN_TYPE_HASH,
-            body.burned[k].collection,
-            body.burned[k].id
-          ));
-          unchecked { ++k; }
-        }
-      }
-      if (body.owns.length > 0) {
-        for(uint k=0; k<body.owns.length;) {
-          hash.owner[k] = keccak256(abi.encode(
-            TOKEN_TYPE_HASH,
-            body.owns[k].collection,
-            body.owns[k].id
-          ));
-          unchecked { ++k; }
-        }
-      }
-      bytes32 bodyhash = keccak256(
-        bytes.concat(
-          abi.encode(
-            BODY_TYPE_HASH,
-            body.id,
-            body.encoding,
-            body.sender,
-            body.receiver,
-            body.value,
-            body.start,
-            body.end,
-            body.royaltyReceiver,
-            body.royaltyAmount
-          ),
-          abi.encode(
-            keccak256(abi.encodePacked(hash.burner)),
-            keccak256(abi.encodePacked(hash.owner)),
-            body.merkleHash,
-            body.puzzleHash
+      if (body.burned.length == 0 && body.owns.length == 0 && body.balance.length == 0) {
+        // split out into 2 chunks because of the stack limit
+        bytes32 bodyhash = keccak256(
+          bytes.concat(
+            abi.encode(
+              BODY_TYPE_HASH,
+              body.id,
+              body.encoding,
+              body.sender,
+              body.receiver,
+              body.value,
+              body.start,
+              body.end
+            ),
+            abi.encode(
+              body.royaltyReceiver,
+              body.royaltyAmount,
+              body.merkleHash,
+              body.puzzleHash,
+              EMPTY_ARRAY_HASH,
+              EMPTY_ARRAY_HASH,
+              EMPTY_ARRAY_HASH
+            )
           )
-        )
-      );
-      require(_hashTypedDataV4(bodyhash).recover(body.signature) == owner(), "2");
+        );
+        require(_hashTypedDataV4(bodyhash).recover(body.signature) == owner(), "2");
+      } else {
+        Hash memory hash = Hash(new bytes32[](body.burned.length), new bytes32[](body.owns.length), new bytes32[](body.balance.length));
+        if (body.burned.length > 0) {
+          for(uint k=0; k<body.burned.length;) {
+            hash.burn[k] = keccak256(abi.encode(
+              TOKEN_TYPE_HASH,
+              body.burned[k].addr,
+              body.burned[k].id
+            ));
+            unchecked { ++k; }
+          }
+        }
+        if (body.owns.length > 0) {
+          for(uint k=0; k<body.owns.length;) {
+            hash.own[k] = keccak256(abi.encode(
+              TOKEN_TYPE_HASH,
+              body.owns[k].addr,
+              body.owns[k].id
+            ));
+            unchecked { ++k; }
+          }
+        }
+        if (body.balance.length > 0) {
+          for(uint k=0; k<body.balance.length;) {
+            hash.balance[k] = keccak256(abi.encode(
+              TOKEN_TYPE_HASH,
+              body.balance[k].addr,
+              body.balance[k].id
+            ));
+            unchecked { ++k; }
+          }
+        }
+        bytes32 bodyhash = keccak256(
+          bytes.concat(
+            abi.encode(
+              BODY_TYPE_HASH,
+              body.id,
+              body.encoding,
+              body.sender,
+              body.receiver,
+              body.value,
+              body.start,
+              body.end,
+              body.royaltyReceiver,
+              body.royaltyAmount,
+              body.merkleHash,
+              body.puzzleHash
+            ),
+            abi.encode(
+              (hash.burn.length > 0 ? keccak256(abi.encodePacked(hash.burn)) : EMPTY_ARRAY_HASH),
+              (hash.own.length > 0 ? keccak256(abi.encodePacked(hash.own)) : EMPTY_ARRAY_HASH),
+              (hash.balance.length > 0 ? keccak256(abi.encodePacked(hash.balance)) : EMPTY_ARRAY_HASH)
+            )
+          )
+        );
+        require(_hashTypedDataV4(bodyhash).recover(body.signature) == owner(), "2");
+      }
 
       //
       // 3. Sender check: if body.sender is specified, the body.sender must match _msgSender()
@@ -240,10 +284,10 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
       if (body.burned.length > 0) {
         for(uint j=0; j<body.burned.length;) {
           Token memory b = body.burned[j];
-          if (b.collection == address(0)) {
+          if (b.addr == address(0)) {
             require(burned[b.id] == _msgSender(), "8");
           } else {
-            require(IToken(b.collection).burned(b.id) == _msgSender(), "8");
+            require(IToken(b.addr).burned(b.id) == _msgSender(), "8");
           }
           unchecked {
             ++j;
@@ -257,10 +301,27 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
       if (body.owns.length > 0) {
         for(uint j=0; j<body.owns.length;) {
           Token memory o = body.owns[j];
-          if (o.collection == address(0)) {
+          if (o.addr == address(0)) {
             require(ownerOf(o.id) == _msgSender(), "9");
           } else {
-            require(IToken(o.collection).ownerOf(o.id) == _msgSender(), "9");
+            require(IToken(o.addr).ownerOf(o.id) == _msgSender(), "9");
+          }
+          unchecked {
+            ++j;
+          }
+        }
+      }
+
+      //
+      // 9. Balance check => if body.balance is not empty, the _msgSender() must have at least the balance specified in the body.balance array
+      //
+      if (body.balance.length > 0) {
+        for(uint j=0; j<body.balance.length;) {
+          Token memory b = body.balance[j];
+          if (b.addr == address(0)) {
+            require(balanceOf(_msgSender()) >= b.id, "10");
+          } else {
+            require(IToken(b.addr).balanceOf(_msgSender()) >= b.id, "10");
           }
           unchecked {
             ++j;
@@ -304,12 +365,12 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
     //
     // 10. Revert everything if not enough money was sent
     //
-    require(val == msg.value, "10");
+    require(val == msg.value, "11");
   }
   function burn(uint[] calldata _tokenIds) external {
     for(uint i=0; i<_tokenIds.length;) {
       uint _tokenId = _tokenIds[i];
-      require(_isApprovedOrOwner(_msgSender(), _tokenId), "11");
+      require(_isApprovedOrOwner(_msgSender(), _tokenId), "15");
       _burn(_tokenId);
       burned[_tokenId] = _msgSender();
       unchecked {

@@ -405,6 +405,25 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "notransfer",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "owner",
     "outputs": [
@@ -724,10 +743,25 @@
             "type": "address"
           },
           {
+            "internalType": "uint96",
+            "name": "royaltyAmount",
+            "type": "uint96"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "merkleHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "puzzleHash",
+            "type": "bytes32"
+          },
+          {
             "components": [
               {
                 "internalType": "address",
-                "name": "collection",
+                "name": "addr",
                 "type": "address"
               },
               {
@@ -744,7 +778,7 @@
             "components": [
               {
                 "internalType": "address",
-                "name": "collection",
+                "name": "addr",
                 "type": "address"
               },
               {
@@ -758,19 +792,21 @@
             "type": "tuple[]"
           },
           {
-            "internalType": "uint96",
-            "name": "royaltyAmount",
-            "type": "uint96"
-          },
-          {
-            "internalType": "bytes32",
-            "name": "merkleHash",
-            "type": "bytes32"
-          },
-          {
-            "internalType": "bytes32",
-            "name": "puzzleHash",
-            "type": "bytes32"
+            "components": [
+              {
+                "internalType": "address",
+                "name": "addr",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct C0.Token[]",
+            "name": "balance",
+            "type": "tuple[]"
           },
           {
             "internalType": "bytes",

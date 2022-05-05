@@ -65,7 +65,8 @@ describe('send', () => {
 
 
     // burn gets rid of the token
-    tx = await c0.token.methods(domain.address).burn([id(cidDigest)]).send()
+    //tx = await c0.token.methods(domain.address).burn([id(cidDigest)]).send()
+    tx = await c0.token.burn(domain.address, [id(cidDigest)])
     owner = c0.token.methods(domain.address).ownerOf(id(cidDigest)).call()
     await expect(owner).to.be.revertedWith("ERC721: owner query for nonexistent token")
 
@@ -134,7 +135,7 @@ describe('send', () => {
 
     // burn gets rid of the token
     tx = c0.token.methods(domain.address).burn([id(cidDigest)]).send()
-    await expect(tx).to.be.revertedWith("11")
+    await expect(tx).to.be.revertedWith("15")
 
   })
   it('mint with burn condition', async() => {

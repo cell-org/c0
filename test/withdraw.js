@@ -304,9 +304,9 @@ describe('withdraw', () => {
     expect(balance.contract.afterWithdraw).to.equal("0")
 
   })
-  it("cant withdraw if not owner", async () => {
-    await c0.init({ web3, key: process.env.RINKEBY_PRIVATE_KEY2 })
-
-    tx = c0.token.methods(domain.address).withdraw(0).send()
-  })
+//  it("cant withdraw if not owner", async () => {
+//    await c0.init({ web3, key: process.env.RINKEBY_PRIVATE_KEY2 })
+//
+//    tx = c0.token.methods(domain.address).withdraw(0).send()
+//  })
 })

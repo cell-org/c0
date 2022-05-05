@@ -15,10 +15,13 @@ var f1
 //const cid = "bafybeibfcfoxxarcrduavcl5uc2hugizg4k3ytlva64hev6xegjmcbu7va"
 const cid = "bafkreicwqno6pzrospmpufqigjj6dn7ylo7si5reajybci22n55evjgv7y"
 const cid2 = "bafkreibwb3avav7qxnckwwzdzddmwp2xuogjtfgrdbgqlnzjquvg7chxpa"
+const cid3 = "bafkreif7mc6e5babfrwzdfd7e424a2u7sptvrjlt6eisevnji5vcumhcd4"
 const parsed = CID.parse(cid).toString(base16.encoder)
 const parsed2 = CID.parse(cid2).toString(base16.encoder)
+const parsed3 = CID.parse(cid3).toString(base16.encoder)
 const cidDigest = "0x" + parsed.slice(9);
 const cidDigest2 = "0x" + parsed2.slice(9);
+const cidDigest3 = "0x" + parsed3.slice(9);
 const id = (x) => {
   return ethers.BigNumber.from(x).toString()
 }
@@ -34,7 +37,7 @@ const fork = async (net) => {
   } else if (net === "rinkeby") {
     f = {
       jsonRpcUrl: process.env.RINKEBY,
-      blockNumber: 10612780
+      blockNumber: 10615185
     }
   }
   await hre.network.provider.request({
@@ -308,7 +311,7 @@ describe('send', () => {
     let tx = c0.token.send([token], [], {
       value: "" + Math.pow(10, 17)
     })
-    await expect(tx).to.be.revertedWith("10");
+    await expect(tx).to.be.revertedWith("11");
 
     // correct amount => should succeed
     let tx2 = await c0.token.send([token], [], {
@@ -339,7 +342,7 @@ describe('send', () => {
     let tx = c0.token.send(tokens, [], {
       value: "" + Math.pow(10, 16)
     })
-    await expect(tx).to.be.revertedWith("10");
+    await expect(tx).to.be.revertedWith("11");
 
     // Correct amount => should succeed
     let tx2 = await c0.token.send(tokens, [], {
@@ -687,9 +690,9 @@ describe('send', () => {
       body: {
         cid: cid2,
         owns: [{
-//          collection: "0x3ad4a8773a078c6a2fd4e4aaf86c4e95d63143f2",
+//          addr: "0x3ad4a8773a078c6a2fd4e4aaf86c4e95d63143f2",
 //          id: 5
-          collection: "0x023457063ac8f3cdbc75d910183b57c873b11d34",
+          addr: "0x023457063ac8f3cdbc75d910183b57c873b11d34",
           id: 1
         }]
       }
@@ -710,5 +713,161 @@ describe('send', () => {
     console.log("owner", owner)
     expect(owner).to.equal(c0.account)
 
+  })
+  it('mint based on local balance', async () => {
+    await fork("mainnet")
+
+    // mint only if you own at least two NFTs on this collection
+    let token1 = await c0.token.create({
+      domain,
+      body: {
+        cid: cid,
+        balance: [{
+          id: 2
+        }]
+      }
+    })
+
+    // default account 1 => owns no nft
+    // try to mint token (cid) => should fail because need at least 2
+    tx = c0.token.send([token1])
+    await expect(tx).to.be.revertedWith("10");
+
+
+    // Now lets mint token2
+    let token2 = await c0.token.create({
+      domain,
+      body: {
+        cid: cid2,
+      }
+    })
+    tx = await c0.token.send([token2])
+    owner = await c0.token.methods(domain.address).ownerOf(token2.body.id).call()
+    console.log("owner", owner)
+    expect(owner).to.equal(c0.account)
+
+
+    // try to mint token1 again => should fail again because we need at least 2
+
+    tx = c0.token.send([token1])
+    await expect(tx).to.be.revertedWith("10")
+
+    let balance = await c0.token.methods(domain.address).balanceOf(c0.account).call()
+    expect(balance).to.equal("1")
+
+
+    // Now lets mint token3
+    let token3 = await c0.token.create({
+      domain,
+      body: {
+        cid: cid3,
+      }
+    })
+    tx = await c0.token.send([token3])
+    owner = await c0.token.methods(domain.address).ownerOf(token3.body.id).call()
+    console.log("owner", owner)
+    expect(owner).to.equal(c0.account)
+
+    balance = await c0.token.methods(domain.address).balanceOf(c0.account).call()
+    expect(balance).to.equal("2")
+
+
+    // Now the balance is 2.
+    // try to mint => should succeed because account 1 now owns 2 NFTs
+
+    tx = await c0.token.send([token1])
+    owner = await c0.token.methods(domain.address).ownerOf(token1.body.id).call()
+    console.log("owner", owner)
+    expect(owner).to.equal(c0.account)
+
+
+    balance = await c0.token.methods(domain.address).balanceOf(c0.account).call()
+    expect(balance).to.equal("3")
+
+
+  })
+  it('mint based on remote ERC721 balance', async () => {
+    await fork("rinkeby")
+
+    let balance  = await c0.token.methods("0x3ad4a8773a078c6a2fd4e4aaf86c4e95d63143f2").balanceOf(c0.account).call()
+    console.log("balance", balance)
+    expect(balance).to.equal("2")
+
+
+    // mint only if you own at least two NFTs on "Mango" collection on Rinkeby
+    let token1 = await c0.token.create({
+      domain,
+      body: {
+        cid: cid,
+        balance: [{
+          addr: "0x3ad4a8773a078c6a2fd4e4aaf86c4e95d63143f2",
+          id: parseInt(balance) + 1 // "3"
+        }]
+      }
+    })
+
+    // default account 1 => owns 2 mango NFTs
+    // try to mint token (cid) => should fail because need at least 3
+    tx = c0.token.send([token1])
+    await expect(tx).to.be.revertedWith("10");
+
+    let token2 = await c0.token.create({
+      domain,
+      body: {
+        cid: cid,
+        balance: [{
+          addr: "0x3ad4a8773a078c6a2fd4e4aaf86c4e95d63143f2",
+          id: balance
+        }]
+      }
+    })
+    tx = await c0.token.send([token2])
+
+    let owner = await c0.token.methods(domain.address).ownerOf(token2.body.id).call()
+    console.log("owner", owner)
+    expect(owner).to.equal(c0.account)
+
+  })
+  it('mint based on remote ERC20 balance', async () => {
+    await fork("rinkeby")
+
+    let balance  = await c0.token.methods("0xb5959246b4e514aea910d5f218aa179870751ff2").balanceOf(c0.account).call()
+    console.log("balance", balance)
+    expect(balance).to.equal("100")
+
+
+    // mint only if you own at least 101 TT ERC20 tokens
+    let token1 = await c0.token.create({
+      domain,
+      body: {
+        cid: cid,
+        balance: [{
+          addr: "0xb5959246b4e514aea910d5f218aa179870751ff2",
+          id: parseInt(balance) + 1 // "101"
+        }]
+      }
+    })
+    console.log("token1", token1)
+
+    // default account 1 => owns 100 TT ERC20 tokens
+    // try to mint token (cid) => should fail because need at least 101
+    tx = c0.token.send([token1])
+    await expect(tx).to.be.revertedWith("10");
+
+    let token2 = await c0.token.create({
+      domain,
+      body: {
+        cid: cid,
+        balance: [{
+          addr: "0xb5959246b4e514aea910d5f218aa179870751ff2",
+          id: balance
+        }]
+      }
+    })
+    tx = await c0.token.send([token2])
+
+    let owner = await c0.token.methods(domain.address).ownerOf(token2.body.id).call()
+    console.log("owner", owner)
+    expect(owner).to.equal(c0.account)
   })
 })
