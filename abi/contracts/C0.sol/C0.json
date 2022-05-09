@@ -178,7 +178,7 @@
   },
   {
     "inputs": [],
-    "name": "TOKEN_TYPE_HASH",
+    "name": "RELATIONSHIP_TYPE_HASH",
     "outputs": [
       {
         "internalType": "bytes32",
@@ -742,7 +742,7 @@
             "components": [
               {
                 "internalType": "uint8",
-                "name": "role",
+                "name": "code",
                 "type": "uint8"
               },
               {
@@ -756,52 +756,8 @@
                 "type": "uint256"
               }
             ],
-            "internalType": "struct C0.Token[]",
-            "name": "burned",
-            "type": "tuple[]"
-          },
-          {
-            "components": [
-              {
-                "internalType": "uint8",
-                "name": "role",
-                "type": "uint8"
-              },
-              {
-                "internalType": "address",
-                "name": "addr",
-                "type": "address"
-              },
-              {
-                "internalType": "uint256",
-                "name": "id",
-                "type": "uint256"
-              }
-            ],
-            "internalType": "struct C0.Token[]",
-            "name": "owns",
-            "type": "tuple[]"
-          },
-          {
-            "components": [
-              {
-                "internalType": "uint8",
-                "name": "role",
-                "type": "uint8"
-              },
-              {
-                "internalType": "address",
-                "name": "addr",
-                "type": "address"
-              },
-              {
-                "internalType": "uint256",
-                "name": "id",
-                "type": "uint256"
-              }
-            ],
-            "internalType": "struct C0.Token[]",
-            "name": "balance",
+            "internalType": "struct C0.Relationship[]",
+            "name": "relationships",
             "type": "tuple[]"
           },
           {

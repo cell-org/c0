@@ -486,7 +486,7 @@ describe('send', () => {
     let tx = await c0.token.send([token], [])
     console.log("Tx", tx)
   })
-  it('if receiver is set, the token must go to the receiver', async () => {
+  it('if body.receiver is set, the token must go to the body.receiver', async () => {
     let token = await c0.token.create({
       domain,
       body: {
@@ -502,7 +502,38 @@ describe('send', () => {
     console.log("owner", owner)
     expect(owner).to.equal(util.bob.address)
   })
-  it('if receiver is not set, and if input.receiver is set, the token goes to the input.receiver', async () => {
+  it('if body.receiver is set, the token must go to the body.receiver EVEN if you pass a different input.receiver', async () => {
+    let token = await c0.token.create({
+      domain,
+      body: {
+        cid,
+        receiver: util.bob.address
+      }
+    })
+    console.log("token", token)
+    console.log("sender", c0.account)
+    let tx = await c0.token.send([token], [{ receiver: util.alice.address }])
+    console.log("Tx", tx)
+    let owner = await c0.token.methods(domain.address).ownerOf(id(cidDigest)).call()
+    console.log("owner", owner)
+    expect(owner).to.equal(util.bob.address)
+  })
+  it('if body.receiver is not set + input.receiver is not set, the mint goes to the minter by default', async () => {
+    let token = await c0.token.create({
+      domain,
+      body: {
+        cid,
+      }
+    })
+    console.log("token", token)
+    console.log("sender", c0.account)
+    let tx = await c0.token.send([token])
+    console.log("Tx", tx)
+    let owner = await c0.token.methods(domain.address).ownerOf(id(cidDigest)).call()
+    console.log("owner", owner)
+    expect(owner).to.equal(c0.account)
+  })
+  it('if body.receiver is not set + input.receiver is set, the mint goes to the input.receiver', async () => {
     let token = await c0.token.create({
       domain,
       body: {
@@ -624,7 +655,8 @@ describe('send', () => {
       domain,
       body: {
         cid: cid2,
-        owns: [{
+        relationships: [{
+          code: 2,
           id: id(cidDigest)
         }]
       }
@@ -720,9 +752,10 @@ describe('send', () => {
       domain,
       body: {
         cid: cid2,
-        owns: [{
+        relationships: [{
 //          addr: "0x3ad4a8773a078c6a2fd4e4aaf86c4e95d63143f2",
 //          id: 5
+          code: 2,
           addr: "0x023457063ac8f3cdbc75d910183b57c873b11d34",
           id: 1
         }]
@@ -753,7 +786,8 @@ describe('send', () => {
       domain,
       body: {
         cid: cid,
-        balance: [{
+        relationships: [{
+          code: 4,
           id: 2
         }]
       }
@@ -830,7 +864,8 @@ describe('send', () => {
       domain,
       body: {
         cid: cid,
-        balance: [{
+        relationships: [{
+          code: 4,
           addr: "0x3ad4a8773a078c6a2fd4e4aaf86c4e95d63143f2",
           id: parseInt(balance) + 1 // "3"
         }]
@@ -846,7 +881,8 @@ describe('send', () => {
       domain,
       body: {
         cid: cid,
-        balance: [{
+        relationships: [{
+          code: 4,
           addr: "0x3ad4a8773a078c6a2fd4e4aaf86c4e95d63143f2",
           id: balance
         }]
@@ -872,7 +908,8 @@ describe('send', () => {
       domain,
       body: {
         cid: cid,
-        balance: [{
+        relationships: [{
+          code: 4,
           addr: "0xb5959246b4e514aea910d5f218aa179870751ff2",
           id: parseInt(balance) + 1 // "101"
         }]
@@ -889,7 +926,8 @@ describe('send', () => {
       domain,
       body: {
         cid: cid,
-        balance: [{
+        relationships: [{
+          code: 4,
           addr: "0xb5959246b4e514aea910d5f218aa179870751ff2",
           id: balance
         }]
@@ -900,5 +938,124 @@ describe('send', () => {
     let owner = await c0.token.methods(domain.address).ownerOf(token2.body.id).call()
     console.log("owner", owner)
     expect(owner).to.equal(c0.account)
+  })
+  it('mint with burn condition', async() => {
+    let tokens_to_burn = [
+      await c0.token.create({
+        domain,
+        body: {
+          cid: cid,
+        }
+      }),
+      await c0.token.create({
+        domain,
+        body: {
+          cid: cid2,
+        }
+      })
+    ]
+    let tx = await c0.token.send(tokens_to_burn)
+
+    let owner = await c0.token.methods(domain.address).ownerOf(id(cidDigest)).call()
+    console.log("owner", id(cidDigest), owner)
+    expect(owner).to.equal(c0.account)
+    owner = await c0.token.methods(domain.address).ownerOf(id(cidDigest2)).call()
+    console.log("owner", id(cidDigest2), owner)
+    expect(owner).to.equal(c0.account)
+
+    // Burn
+    tx = await c0.token.methods(domain.address).burn([id(cidDigest), id(cidDigest2)]).send()
+
+    // Mint with burn condition
+    let next_gen = await c0.token.create({
+      domain,
+      body: {
+        cid: cid3,
+        relationships: [{
+          code: 0,
+          address: "0x0000000000000000000000000000000000000000",
+          id: id(cidDigest)
+        }, {
+          code: 0,
+          address: "0x0000000000000000000000000000000000000000",
+          id: id(cidDigest2)
+        }]
+      }
+    })
+    console.log("nextgen", next_gen)
+
+    tx = await c0.token.send([next_gen])
+
+    owner = c0.token.methods(domain.address).ownerOf(id(cidDigest)).call()
+    await expect(owner).to.be.revertedWith("ERC721: owner query for nonexistent token")
+    owner = c0.token.methods(domain.address).ownerOf(id(cidDigest2)).call()
+    await expect(owner).to.be.revertedWith("ERC721: owner query for nonexistent token")
+
+    owner = await c0.token.methods(domain.address).ownerOf(id(cidDigest3)).call()
+    console.log("owner", id(cidDigest3), cidDigest3, owner)
+    expect(owner).to.equal(c0.account)
+
+  })
+  it('try to mint without meeting the burn condition => fail', async () => {
+    let tokens_to_burn = [
+      await c0.token.create({
+        domain,
+        body: {
+          cid: cid,
+        }
+      }),
+      await c0.token.create({
+        domain,
+        body: {
+          cid: cid2,
+        }
+      })
+    ]
+    console.log(tokens_to_burn)
+    let tx = await c0.token.send(tokens_to_burn)
+
+    let owner = await c0.token.methods(domain.address).ownerOf(id(cidDigest)).call()
+    console.log("owner", id(cidDigest), owner)
+    expect(owner).to.equal(c0.account)
+    owner = await c0.token.methods(domain.address).ownerOf(id(cidDigest2)).call()
+    console.log("owner", id(cidDigest2), owner)
+    expect(owner).to.equal(c0.account)
+
+    // Burn => only burn the first token
+    tx = await c0.token.methods(domain.address).burn([id(cidDigest)]).send()
+
+    // Mint with burn condition with token1 and token2 => should fail because token2 hasn't been burned
+    let next_gen = await c0.token.create({
+      domain,
+      body: {
+        cid: cid3,
+        relationships: [{
+          code: 0,
+          id: id(cidDigest)
+        }, {
+          code: 0,
+          id: id(cidDigest2)
+        }]
+      }
+    })
+    console.log("nextgen", next_gen)
+
+    tx = c0.token.send([next_gen])
+    await expect(tx).to.be.revertedWith("8")
+
+    // Now burn token2 and retry
+    tx = await c0.token.methods(domain.address).burn([id(cidDigest2)]).send()
+
+    tx = await c0.token.send([next_gen])
+
+    owner = c0.token.methods(domain.address).ownerOf(id(cidDigest)).call()
+    await expect(owner).to.be.revertedWith("ERC721: owner query for nonexistent token")
+
+    owner = await c0.token.methods(domain.address).ownerOf(id(cidDigest3)).call()
+    console.log("owner", id(cidDigest3), cidDigest3, owner)
+    expect(owner).to.equal(c0.account)
+
+    owner = c0.token.methods(domain.address).ownerOf(id(cidDigest2)).call()
+    await expect(owner).to.be.revertedWith("ERC721: owner query for nonexistent token")
   })
 })

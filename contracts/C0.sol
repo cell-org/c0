@@ -41,7 +41,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/draft-EIP712Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
-interface IToken {
+interface IRelationship {
   function burned(uint256 tokenId) external view returns (address);
   function ownerOf(uint256 tokenId) external view returns (address);
   function balanceOf(address account) external view returns (uint256);
@@ -56,15 +56,15 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
   event StateUpdated(uint indexed state);
   event BaseURIUpdated(string uri);
   event NSUpdated(string name, string symbol);
-  bytes32 public constant TOKEN_TYPE_HASH = keccak256("Token(uint8 role,address addr,uint256 id)");
-  bytes32 public constant BODY_TYPE_HASH = keccak256("Body(uint256 id,uint8 encoding,address sender,address receiver,uint128 value,uint64 start,uint64 end,address royaltyReceiver,uint96 royaltyAmount,bytes32 merkleHash,bytes32 puzzleHash,Token[] burned,Token[] owns,Token[] balance)Token(uint8 role,address addr,uint256 id)");
+  bytes32 public constant RELATIONSHIP_TYPE_HASH = keccak256("Relationship(uint8 code,address addr,uint256 id)");
+  bytes32 public constant BODY_TYPE_HASH = keccak256("Body(uint256 id,uint8 encoding,address sender,address receiver,uint128 value,uint64 start,uint64 end,address royaltyReceiver,uint96 royaltyAmount,bytes32 merkleHash,bytes32 puzzleHash,Relationship[] relationships)Relationship(uint8 code,address addr,uint256 id)");
   bytes32 private constant EMPTY_ARRAY_HASH = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470; // keccak256(abi.encodePacked(new bytes32[](0)))
 
   //
   // Struct declaration
   //
-  struct Token {
-    uint8 role;     // 0: sender; 1: receiver
+  struct Relationship {
+    uint8 code;
     address addr;   // contract address
     uint256 id;     // tokenId/value
   }
@@ -80,9 +80,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
     uint96 royaltyAmount;
     bytes32 merkleHash;
     bytes32 puzzleHash;
-    Token[] burned;
-    Token[] owns;
-    Token[] balance;
+    Relationship[] relationships;
     bytes signature;
   }
   struct Gift {
@@ -142,7 +140,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
     for(uint i=0;i<gifts.length;) {
       Gift calldata g = gifts[i];
       _mint(g.receiver, g.id);
-      if (g.royaltyReceiver != address(0x0)) {
+      if (g.royaltyReceiver != address(0)) {
         royalty[g.id] = Royalty(g.royaltyReceiver, g.royaltyAmount);
       }
       unchecked { ++i; }
@@ -162,102 +160,131 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
       //
       // 1. Burned check: disallow reminting if already burned
       //
-      require(burned[body.id] == address(0x0), "1");
+      require(burned[body.id] == address(0), "1");
+
+      // Who receives the token when minted?
+      // if body.receiver is set (not 0) => body.receiver
+      // if body.receiver is NOT set => input.receiver
+      address receiver = (body.receiver != address(0) ? body.receiver : input.receiver);
 
       //
       // 2. Signature check
       //
-      if (body.burned.length == 0 && body.owns.length == 0 && body.balance.length == 0) {
+      if (body.relationships.length == 0) {
         // split out into 2 chunks because of the stack limit
         bytes32 bodyhash = keccak256(
-          bytes.concat(
-            abi.encode(
-              BODY_TYPE_HASH,
-              body.id,
-              body.encoding,
-              body.sender,
-              body.receiver,
-              body.value,
-              body.start,
-              body.end
-            ),
-            abi.encode(
-              body.royaltyReceiver,
-              body.royaltyAmount,
-              body.merkleHash,
-              body.puzzleHash,
-              EMPTY_ARRAY_HASH,
-              EMPTY_ARRAY_HASH,
-              EMPTY_ARRAY_HASH
-            )
+          abi.encode(
+            BODY_TYPE_HASH,
+            body.id,
+            body.encoding,
+            body.sender,
+            body.receiver,
+            body.value,
+            body.start,
+            body.end,
+            body.royaltyReceiver,
+            body.royaltyAmount,
+            body.merkleHash,
+            body.puzzleHash,
+            EMPTY_ARRAY_HASH
           )
         );
         require(_hashTypedDataV4(bodyhash).recover(body.signature) == owner(), "2");
       } else {
-        Hash memory hash = Hash(new bytes32[](body.burned.length), new bytes32[](body.owns.length), new bytes32[](body.balance.length));
-        if (body.burned.length > 0) {
-          for(uint k=0; k<body.burned.length;) {
-            hash.burn[k] = keccak256(abi.encode(
-              TOKEN_TYPE_HASH,
-              body.burned[k].role,
-              body.burned[k].addr,
-              body.burned[k].id
-            ));
-            unchecked { ++k; }
+        bytes32[] memory hashes = new bytes32[](body.relationships.length);
+        for(uint j=0; j<body.relationships.length;) {
+          Relationship memory relationship = body.relationships[j];
+
+          //
+          // relationship.code :=
+          //    0: burned by sender
+          //    1: burned by receiver
+          //    2: owned by sender
+          //    3: owned by receiver
+          //    4. balance by sender
+          //    5. balance by receiver
+          //
+
+          // 0. burned by sender
+          if (relationship.code == 0) {
+            if (relationship.addr == address(0)) {
+              require(burned[relationship.id] == _msgSender(), "8");
+            } else {
+              require(IRelationship(relationship.addr).burned(relationship.id) == _msgSender(), "8");
+            }
+          }
+          // 1. burned by receiver
+          else if (relationship.code == 1) {
+            if (relationship.addr == address(0)) {
+              require(burned[relationship.id] == receiver, "8");
+            } else {
+              require(IRelationship(relationship.addr).burned(relationship.id) == receiver, "8");
+            }
+          }
+          // 2. owned by sender
+          else if (relationship.code == 2) {
+            if (relationship.addr == address(0)) {
+              require(ownerOf(relationship.id) == _msgSender(), "9");
+            } else {
+              require(IRelationship(relationship.addr).ownerOf(relationship.id) == _msgSender(), "9");
+            }
+          }
+          // 3. owned by receiver
+          else if (relationship.code == 3) {
+            if (relationship.addr == address(0)) {
+              require(ownerOf(relationship.id) == receiver, "9");
+            } else {
+              require(IRelationship(relationship.addr).ownerOf(relationship.id) == receiver, "9");
+            }
+          }
+          //  4. balance by sender
+          else if (relationship.code == 4) {
+            if (relationship.addr == address(0)) {
+              require(balanceOf(_msgSender()) >= relationship.id, "10");
+            } else {
+              require(IRelationship(relationship.addr).balanceOf(_msgSender()) >= relationship.id, "10");
+            }
+          }
+          //  5. balance by receiver
+          else if (relationship.code == 5) {
+            if (relationship.addr == address(0)) {
+              require(balanceOf(receiver) >= relationship.id, "10");
+            } else {
+              require(IRelationship(relationship.addr).balanceOf(receiver) >= relationship.id, "10");
+            }
+          }
+          hashes[j] = keccak256(abi.encode(
+            RELATIONSHIP_TYPE_HASH,
+            relationship.code,
+            relationship.addr,
+            relationship.id
+          ));
+          unchecked {
+            ++j;
           }
         }
-        if (body.owns.length > 0) {
-          for(uint k=0; k<body.owns.length;) {
-            hash.own[k] = keccak256(abi.encode(
-              TOKEN_TYPE_HASH,
-              body.owns[k].role,
-              body.owns[k].addr,
-              body.owns[k].id
-            ));
-            unchecked { ++k; }
-          }
-        }
-        if (body.balance.length > 0) {
-          for(uint k=0; k<body.balance.length;) {
-            hash.balance[k] = keccak256(abi.encode(
-              TOKEN_TYPE_HASH,
-              body.balance[k].role,
-              body.balance[k].addr,
-              body.balance[k].id
-            ));
-            unchecked { ++k; }
-          }
-        }
-        bytes32 bodyhash = keccak256(
-          bytes.concat(
-            abi.encode(
-              BODY_TYPE_HASH,
-              body.id,
-              body.encoding,
-              body.sender,
-              body.receiver,
-              body.value,
-              body.start,
-              body.end,
-              body.royaltyReceiver,
-              body.royaltyAmount,
-              body.merkleHash,
-              body.puzzleHash
-            ),
-            abi.encode(
-              (hash.burn.length > 0 ? keccak256(abi.encodePacked(hash.burn)) : EMPTY_ARRAY_HASH),
-              (hash.own.length > 0 ? keccak256(abi.encodePacked(hash.own)) : EMPTY_ARRAY_HASH),
-              (hash.balance.length > 0 ? keccak256(abi.encodePacked(hash.balance)) : EMPTY_ARRAY_HASH)
-            )
-          )
-        );
+        bytes32 bodyhash = keccak256(abi.encode(
+          BODY_TYPE_HASH,
+          body.id,
+          body.encoding,
+          body.sender,
+          body.receiver,
+          body.value,
+          body.start,
+          body.end,
+          body.royaltyReceiver,
+          body.royaltyAmount,
+          body.merkleHash,
+          body.puzzleHash,
+          keccak256(abi.encodePacked(hashes))
+        ));
         require(_hashTypedDataV4(bodyhash).recover(body.signature) == owner(), "2");
       }
 
       //
       // 3. Sender check: if body.sender is specified, the body.sender must match _msgSender()
       //
-      if (body.sender != address(0x0)) require(body.sender == _msgSender(), "3");
+      if (body.sender != address(0)) require(body.sender == _msgSender(), "3");
 
       //
       // 4. Start timelock check
@@ -283,85 +310,6 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
         require(input.merkle.length > 0 && verify(body.merkleHash, input.merkle, _msgSender()), "7");
       }
 
-      // Who receives the token when minted?
-      // if body.receiver is set (not 0) => body.receiver
-      // if body.receiver is NOT set => input.receiver
-      address receiver = (body.receiver != address(0) ? body.receiver : input.receiver);
-
-      //
-      // 8. Burner check => if body.burned is not empty, the _msgSender() must have burned all the tokens in the body.burned array
-      //
-      if (body.burned.length > 0) {
-        for(uint j=0; j<body.burned.length;) {
-          Token memory b = body.burned[j];
-          if (b.addr == address(0)) {
-            if (b.role == 0) {                                    // sender
-              require(burned[b.id] == _msgSender(), "8");
-            } else {                                              // receiver
-              require(burned[b.id] == receiver, "8");
-            }
-          } else {
-            if (b.role == 0) {                                    // sender
-              require(IToken(b.addr).burned(b.id) == _msgSender(), "8");
-            } else {                                              // receiver
-              require(IToken(b.addr).burned(b.id) == receiver, "8");
-            }
-          }
-          unchecked {
-            ++j;
-          }
-        }
-      }
-
-      //
-      // 9. Owner check => if body.owns is not empty, the _msgSender() must own all the tokens in the body.owns array
-      //
-      if (body.owns.length > 0) {
-        for(uint j=0; j<body.owns.length;) {
-          Token memory o = body.owns[j];
-          if (o.addr == address(0)) {
-            if (o.role == 0) {                                    // sender
-              require(ownerOf(o.id) == _msgSender(), "9");
-            } else {                                              // receiver
-              require(ownerOf(o.id) == receiver, "9");
-            }
-          } else {
-            if (o.role == 0) {                                    // sender
-              require(IToken(o.addr).ownerOf(o.id) == _msgSender(), "9");
-            } else {                                              // receiver
-              require(IToken(o.addr).ownerOf(o.id) == receiver, "9");
-            }
-          }
-          unchecked {
-            ++j;
-          }
-        }
-      }
-
-      //
-      // 9. Balance check => if body.balance is not empty, the _msgSender() must have at least the balance specified in the body.balance array
-      //
-      if (body.balance.length > 0) {
-        for(uint j=0; j<body.balance.length;) {
-          Token memory b = body.balance[j];
-          if (b.addr == address(0)) {
-            if (b.role == 0) {                                    // sender
-              require(balanceOf(_msgSender()) >= b.id, "10");
-            } else {                                              // receiver
-              require(balanceOf(receiver) >= b.id, "10");
-            }
-          } else {
-            if (b.role == 0) {                                    // sender
-              require(IToken(b.addr).balanceOf(_msgSender()) >= b.id, "10");
-            } else {                                              // receiver
-              require(IToken(b.addr).balanceOf(receiver) >= b.id, "10");
-            }
-          }
-          unchecked {
-            ++j;
-          }
-        }
-      }
 
       //
       //
@@ -378,7 +326,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
       //
       // A.2. Set royalty: EIP-2981
       //
-      if (body.royaltyReceiver != address(0x0)) {
+      if (body.royaltyReceiver != address(0)) {
         royalty[body.id] = Royalty(body.royaltyReceiver, body.royaltyAmount);
       }
 
