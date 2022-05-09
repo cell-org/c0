@@ -405,25 +405,6 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "notransfer",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "owner",
     "outputs": [
@@ -760,6 +741,11 @@
           {
             "components": [
               {
+                "internalType": "uint8",
+                "name": "role",
+                "type": "uint8"
+              },
+              {
                 "internalType": "address",
                 "name": "addr",
                 "type": "address"
@@ -777,6 +763,11 @@
           {
             "components": [
               {
+                "internalType": "uint8",
+                "name": "role",
+                "type": "uint8"
+              },
+              {
                 "internalType": "address",
                 "name": "addr",
                 "type": "address"
@@ -793,6 +784,11 @@
           },
           {
             "components": [
+              {
+                "internalType": "uint8",
+                "name": "role",
+                "type": "uint8"
+              },
               {
                 "internalType": "address",
                 "name": "addr",
@@ -821,6 +817,11 @@
       {
         "components": [
           {
+            "internalType": "address",
+            "name": "receiver",
+            "type": "address"
+          },
+          {
             "internalType": "bytes",
             "name": "puzzle",
             "type": "bytes"
@@ -831,8 +832,8 @@
             "type": "bytes32[]"
           }
         ],
-        "internalType": "struct C0.Proof[]",
-        "name": "proofs",
+        "internalType": "struct C0.Input[]",
+        "name": "inputs",
         "type": "tuple[]"
       }
     ],

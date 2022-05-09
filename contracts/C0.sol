@@ -36,7 +36,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 pragma solidity ^0.8.9;
 import "./ERC721.sol";
-import "hardhat/console.sol";
+//import "hardhat/console.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/draft-EIP712Upgradeable.sol";
@@ -56,16 +56,17 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
   event StateUpdated(uint indexed state);
   event BaseURIUpdated(string uri);
   event NSUpdated(string name, string symbol);
-  bytes32 public constant TOKEN_TYPE_HASH = keccak256("Token(address addr,uint256 id)");
-  bytes32 public constant BODY_TYPE_HASH = keccak256("Body(uint256 id,uint8 encoding,address sender,address receiver,uint128 value,uint64 start,uint64 end,address royaltyReceiver,uint96 royaltyAmount,bytes32 merkleHash,bytes32 puzzleHash,Token[] burned,Token[] owns,Token[] balance)Token(address addr,uint256 id)");
+  bytes32 public constant TOKEN_TYPE_HASH = keccak256("Token(uint8 role,address addr,uint256 id)");
+  bytes32 public constant BODY_TYPE_HASH = keccak256("Body(uint256 id,uint8 encoding,address sender,address receiver,uint128 value,uint64 start,uint64 end,address royaltyReceiver,uint96 royaltyAmount,bytes32 merkleHash,bytes32 puzzleHash,Token[] burned,Token[] owns,Token[] balance)Token(uint8 role,address addr,uint256 id)");
   bytes32 private constant EMPTY_ARRAY_HASH = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470; // keccak256(abi.encodePacked(new bytes32[](0)))
 
   //
   // Struct declaration
   //
   struct Token {
-    address addr;
-    uint256 id;
+    uint8 role;     // 0: sender; 1: receiver
+    address addr;   // contract address
+    uint256 id;     // tokenId/value
   }
   struct Body {
     uint256 id;
@@ -91,7 +92,8 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
     uint96 royaltyAmount;
     uint8 encoding; // 0: raw, 1: dag-pb
   }
-  struct Proof {
+  struct Input {
+    address receiver;
     bytes puzzle;
     bytes32[] merkle;
   }
@@ -150,12 +152,12 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
   //
   // mint tokens (c0.token.send())
   //
-  function token(Body[] calldata bodies, Proof[] calldata proofs) external payable {
+  function token(Body[] calldata bodies, Input[] calldata inputs) external payable {
     require(state == 0, "0");
     uint val;
     for(uint i=0; i<bodies.length;) {
       Body calldata body = bodies[i];
-      Proof calldata proof = proofs[i];
+      Input calldata input = inputs[i];
 
       //
       // 1. Burned check: disallow reminting if already burned
@@ -197,6 +199,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
           for(uint k=0; k<body.burned.length;) {
             hash.burn[k] = keccak256(abi.encode(
               TOKEN_TYPE_HASH,
+              body.burned[k].role,
               body.burned[k].addr,
               body.burned[k].id
             ));
@@ -207,6 +210,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
           for(uint k=0; k<body.owns.length;) {
             hash.own[k] = keccak256(abi.encode(
               TOKEN_TYPE_HASH,
+              body.owns[k].role,
               body.owns[k].addr,
               body.owns[k].id
             ));
@@ -217,6 +221,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
           for(uint k=0; k<body.balance.length;) {
             hash.balance[k] = keccak256(abi.encode(
               TOKEN_TYPE_HASH,
+              body.balance[k].role,
               body.balance[k].addr,
               body.balance[k].id
             ));
@@ -265,18 +270,23 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
       require(body.end >= block.timestamp, "5");
 
       //
-      // 6. Puzzle proof check => the hash of the provided preimage string (proof.puzzle) must match the hash (body.puzzleHash)
+      // 6. Puzzle input check => the hash of the provided preimage string (input.puzzle) must match the hash (body.puzzleHash)
       //
       if (body.puzzleHash != 0) {
-        require(proof.puzzle.length > 0 && keccak256(proof.puzzle) == body.puzzleHash, "6");
+        require(input.puzzle.length > 0 && keccak256(input.puzzle) == body.puzzleHash, "6");
       }
 
       //
-      // 7. Merkle proof check => The _msgSender() must be included in the merkle tree specified by the body.merkleHash (verified using merkleproof proof.merkle)
+      // 7. Merkle input check => The _msgSender() must be included in the merkle tree specified by the body.merkleHash (verified using merkleproof input.merkle)
       //
       if (body.merkleHash != 0) {
-        require(proof.merkle.length > 0 && verify(body.merkleHash, proof.merkle, _msgSender()), "7");
+        require(input.merkle.length > 0 && verify(body.merkleHash, input.merkle, _msgSender()), "7");
       }
+
+      // Who receives the token when minted?
+      // if body.receiver is set (not 0) => body.receiver
+      // if body.receiver is NOT set => input.receiver
+      address receiver = (body.receiver != address(0) ? body.receiver : input.receiver);
 
       //
       // 8. Burner check => if body.burned is not empty, the _msgSender() must have burned all the tokens in the body.burned array
@@ -285,9 +295,17 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
         for(uint j=0; j<body.burned.length;) {
           Token memory b = body.burned[j];
           if (b.addr == address(0)) {
-            require(burned[b.id] == _msgSender(), "8");
+            if (b.role == 0) {                                    // sender
+              require(burned[b.id] == _msgSender(), "8");
+            } else {                                              // receiver
+              require(burned[b.id] == receiver, "8");
+            }
           } else {
-            require(IToken(b.addr).burned(b.id) == _msgSender(), "8");
+            if (b.role == 0) {                                    // sender
+              require(IToken(b.addr).burned(b.id) == _msgSender(), "8");
+            } else {                                              // receiver
+              require(IToken(b.addr).burned(b.id) == receiver, "8");
+            }
           }
           unchecked {
             ++j;
@@ -302,9 +320,17 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
         for(uint j=0; j<body.owns.length;) {
           Token memory o = body.owns[j];
           if (o.addr == address(0)) {
-            require(ownerOf(o.id) == _msgSender(), "9");
+            if (o.role == 0) {                                    // sender
+              require(ownerOf(o.id) == _msgSender(), "9");
+            } else {                                              // receiver
+              require(ownerOf(o.id) == receiver, "9");
+            }
           } else {
-            require(IToken(o.addr).ownerOf(o.id) == _msgSender(), "9");
+            if (o.role == 0) {                                    // sender
+              require(IToken(o.addr).ownerOf(o.id) == _msgSender(), "9");
+            } else {                                              // receiver
+              require(IToken(o.addr).ownerOf(o.id) == receiver, "9");
+            }
           }
           unchecked {
             ++j;
@@ -319,9 +345,17 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
         for(uint j=0; j<body.balance.length;) {
           Token memory b = body.balance[j];
           if (b.addr == address(0)) {
-            require(balanceOf(_msgSender()) >= b.id, "10");
+            if (b.role == 0) {                                    // sender
+              require(balanceOf(_msgSender()) >= b.id, "10");
+            } else {                                              // receiver
+              require(balanceOf(receiver) >= b.id, "10");
+            }
           } else {
-            require(IToken(b.addr).balanceOf(_msgSender()) >= b.id, "10");
+            if (b.role == 0) {                                    // sender
+              require(IToken(b.addr).balanceOf(_msgSender()) >= b.id, "10");
+            } else {                                              // receiver
+              require(IToken(b.addr).balanceOf(receiver) >= b.id, "10");
+            }
           }
           unchecked {
             ++j;
@@ -351,10 +385,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
       //
       // A.3. Mint the token
       //
-      _mint(
-        (body.receiver == address(0x0) ? _msgSender() : body.receiver), 
-        body.id
-      );
+      _mint(receiver, body.id);
 
       unchecked {
         val+=body.value;

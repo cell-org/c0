@@ -476,7 +476,7 @@ describe('send', () => {
     expect(owner1).to.equal(c0.account)
     expect(owner2).to.equal(c0.account)
   })
-  it.only('mint single', async () => {
+  it('mint single', async () => {
     let token = await c0.token.create({
       domain,
       body: { cid }
@@ -485,6 +485,37 @@ describe('send', () => {
     console.log("sender", c0.account)
     let tx = await c0.token.send([token], [])
     console.log("Tx", tx)
+  })
+  it('if receiver is set, the token must go to the receiver', async () => {
+    let token = await c0.token.create({
+      domain,
+      body: {
+        cid,
+        receiver: util.bob.address
+      }
+    })
+    console.log("token", token)
+    console.log("sender", c0.account)
+    let tx = await c0.token.send([token], [])
+    console.log("Tx", tx)
+    let owner = await c0.token.methods(domain.address).ownerOf(id(cidDigest)).call()
+    console.log("owner", owner)
+    expect(owner).to.equal(util.bob.address)
+  })
+  it('if receiver is not set, and if input.receiver is set, the token goes to the input.receiver', async () => {
+    let token = await c0.token.create({
+      domain,
+      body: {
+        cid,
+      }
+    })
+    console.log("token", token)
+    console.log("sender", c0.account)
+    let tx = await c0.token.send([token], [{ receiver: util.bob.address }])
+    console.log("Tx", tx)
+    let owner = await c0.token.methods(domain.address).ownerOf(id(cidDigest)).call()
+    console.log("owner", owner)
+    expect(owner).to.equal(util.bob.address)
   })
   it('mint with sender merkle tree should work when a correct proof is provided', async () => {
     let signers = await ethers.getSigners();
