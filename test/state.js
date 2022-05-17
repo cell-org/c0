@@ -87,7 +87,7 @@ describe('state', () => {
     expect(state).to.equal('2')
     // 2. try to open
     tx = c0.token.methods(domain.address).setState(0).send()
-    await expect(tx).to.be.revertedWith("14")
+    await expect(tx).to.be.revertedWith("40")
   })
   it('once frozen, cannot change to paused', async () => {
     // 1. freeze
@@ -96,7 +96,7 @@ describe('state', () => {
     expect(state).to.equal('2')
     // 2. try to open
     tx = c0.token.methods(domain.address).setState(1).send()
-    await expect(tx).to.be.revertedWith("14")
+    await expect(tx).to.be.revertedWith("40")
   })
   it('can open when paused, cant open when frozen, can freeze when paused, cant pause when frozen', async () => {
     // can pause when open
@@ -110,10 +110,10 @@ describe('state', () => {
     // freeze and try to open  => should fail
     tx = await c0.token.methods(domain.address).setState(2).send()
     tx = c0.token.methods(domain.address).setState(0).send()
-    await expect(tx).to.be.revertedWith("14")
+    await expect(tx).to.be.revertedWith("40")
     // try to pause when frozen => should fail
     tx = c0.token.methods(domain.address).setState(1).send()
-    await expect(tx).to.be.revertedWith("14")
+    await expect(tx).to.be.revertedWith("40")
 
 
   })
@@ -123,12 +123,12 @@ describe('state', () => {
     // pause
     let tx = await c0.token.methods(domain.address).setState(1).send()
     tx = c0.token.methods(domain.address).setNS("New name", "new symbol").send()
-    await expect(tx).to.be.revertedWith("16")
+    await expect(tx).to.be.revertedWith("60")
   })
   it('if frozen, cannot setNS()', async () => {
     let tx = await c0.token.methods(domain.address).setState(2).send()
     tx = c0.token.methods(domain.address).setNS("New name", "new symbol").send()
-    await expect(tx).to.be.revertedWith("16")
+    await expect(tx).to.be.revertedWith("60")
   })
   it('can pause, and then re-open and setNS()', async () => {
     let name = await c0.token.methods(domain.address).name().call()
@@ -159,12 +159,12 @@ describe('state', () => {
     // pause
     let tx = await c0.token.methods(domain.address).setState(1).send()
     tx = c0.token.methods(domain.address).setBaseURI("https://mysite.com/files").send()
-    await expect(tx).to.be.revertedWith("15")
+    await expect(tx).to.be.revertedWith("50")
   })
   it('if frozen, cannot setBaseURI()', async () => {
     let tx = await c0.token.methods(domain.address).setState(2).send()
     tx = c0.token.methods(domain.address).setBaseURI("https://mysite.com/files").send()
-    await expect(tx).to.be.revertedWith("15")
+    await expect(tx).to.be.revertedWith("50")
   })
   it('can pause, and then re-open and setBaseURI()', async () => {
     let baseURI = await c0.token.methods(domain.address).baseURI().call()

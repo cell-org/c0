@@ -177,6 +177,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "RELATION_TYPE_HASH",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -229,14 +242,52 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "_tokenId",
-        "type": "uint256"
+        "internalType": "uint256[]",
+        "name": "_tokenIds",
+        "type": "uint256[]"
       }
     ],
     "name": "burn",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "burned",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "encoding",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -283,9 +334,9 @@
             "type": "uint96"
           },
           {
-            "internalType": "bool",
-            "name": "raw",
-            "type": "bool"
+            "internalType": "uint8",
+            "name": "encoding",
+            "type": "uint8"
           }
         ],
         "internalType": "struct C0.Gift[]",
@@ -653,11 +704,6 @@
             "type": "uint64"
           },
           {
-            "internalType": "bool",
-            "name": "raw",
-            "type": "bool"
-          },
-          {
             "internalType": "address",
             "name": "sender",
             "type": "address"
@@ -678,14 +724,46 @@
             "type": "uint96"
           },
           {
+            "internalType": "uint8",
+            "name": "encoding",
+            "type": "uint8"
+          },
+          {
             "internalType": "bytes32",
-            "name": "merkleHash",
+            "name": "sendersHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "receiversHash",
             "type": "bytes32"
           },
           {
             "internalType": "bytes32",
             "name": "puzzleHash",
             "type": "bytes32"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint8",
+                "name": "code",
+                "type": "uint8"
+              },
+              {
+                "internalType": "address",
+                "name": "addr",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct C0.Relation[]",
+            "name": "relations",
+            "type": "tuple[]"
           },
           {
             "internalType": "bytes",
@@ -700,18 +778,28 @@
       {
         "components": [
           {
+            "internalType": "address",
+            "name": "receiver",
+            "type": "address"
+          },
+          {
             "internalType": "bytes",
             "name": "puzzle",
             "type": "bytes"
           },
           {
             "internalType": "bytes32[]",
-            "name": "merkle",
+            "name": "sendersProof",
+            "type": "bytes32[]"
+          },
+          {
+            "internalType": "bytes32[]",
+            "name": "receiversProof",
             "type": "bytes32[]"
           }
         ],
-        "internalType": "struct C0.Proof[]",
-        "name": "proofs",
+        "internalType": "struct C0.Input[]",
+        "name": "inputs",
         "type": "tuple[]"
       }
     ],

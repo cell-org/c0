@@ -143,6 +143,15 @@ describe('tokenURI', () => {
       expect(tokenURI).to.equal("ipfs://" + cids[i])
     }
   })
+  it("tokenURI returns error when the token doesnt exist", async () => {
+    let token = await c0.token.create({
+      domain,
+      body: { cid: cid2, }
+    })
+    await c0.token.send([token])
+    let tokenURI = c0.token.methods(domain.address).tokenURI(1).call()
+    await expect(tokenURI).to.be.revertedWith("ERC721Metadata: URI query for nonexistent token")
+  })
   it("large video file => dag-pb encoding", async () => {
     const buf = await fs.promises.readFile(__dirname + "/oceans.mp4")
     let cid = await nebulus.add(buf)
@@ -153,7 +162,7 @@ describe('tokenURI', () => {
       body: { cid: cid, }
     })
     console.log("TOKEN", token)
-    expect(token.body.raw).to.equal(false)
+    expect(token.body.encoding).to.equal(1)
 
     await c0.token.send([token])
     const tokenURI = await c0.token.methods(domain.address).tokenURI(token.body.id).call()
@@ -169,7 +178,7 @@ describe('tokenURI', () => {
       body: { cid: cid, }
     })
     console.log("TOKEN", token)
-    expect(token.body.raw).to.equal(false)
+    expect(token.body.encoding).to.equal(1)
 
     await c0.token.send([token])
     const tokenURI = await c0.token.methods(domain.address).tokenURI(token.body.id).call()
@@ -185,7 +194,7 @@ describe('tokenURI', () => {
       body: { cid: cid, }
     })
     console.log("TOKEN", token)
-    expect(token.body.raw).to.equal(false)
+    expect(token.body.encoding).to.equal(1)
 
     await c0.token.send([token])
     const tokenURI = await c0.token.methods(domain.address).tokenURI(token.body.id).call()
@@ -201,7 +210,7 @@ describe('tokenURI', () => {
       body: { cid: cid, }
     })
     console.log("TOKEN", token)
-    expect(token.body.raw).to.equal(false)
+    expect(token.body.encoding).to.equal(1)
 
     await c0.token.send([token])
     const tokenURI = await c0.token.methods(domain.address).tokenURI(token.body.id).call()
@@ -217,7 +226,7 @@ describe('tokenURI', () => {
       body: { cid: cid, }
     })
     console.log("TOKEN", token)
-    expect(token.body.raw).to.equal(true)
+    expect(token.body.encoding).to.equal(0)
 
     await c0.token.send([token])
     const tokenURI = await c0.token.methods(domain.address).tokenURI(token.body.id).call()
@@ -233,7 +242,7 @@ describe('tokenURI', () => {
       body: { cid: cid, }
     })
     console.log("TOKEN", token)
-    expect(token.body.raw).to.equal(true)
+    expect(token.body.encoding).to.equal(0)
 
     await c0.token.send([token])
     const tokenURI = await c0.token.methods(domain.address).tokenURI(token.body.id).call()
@@ -249,7 +258,45 @@ describe('tokenURI', () => {
       body: { cid: cid, }
     })
     console.log("TOKEN", token)
-    expect(token.body.raw).to.equal(true)
+    expect(token.body.encoding).to.equal(0)
+
+    await c0.token.send([token])
+    const tokenURI = await c0.token.methods(domain.address).tokenURI(token.body.id).call()
+    expect(tokenURI).to.equal("ipfs://" + cid)
+  })
+  it("metadata => raw encoding", async () => {
+    const meta = {"description":"NFT Worlds are generative worlds with geography, resource & feature data stored on chain. NFT Worlds can be played, explored and built in.     You can sync changes you make to your world so they reflect on your NFT. Feel free to use NFT Worlds in any way you want. Learn more at nftworlds.com","external_url":"https    ://www.nftworlds.com/2409","image":"https://ipfs.nftworlds.com/ipfs/QmXABHZHLoo4tjLgLnyA2vDnzMDG7qf7t3a5wjZfntSuf3","name":"World #2409","attributes":[{"trait_type":"Land A    rea (km^2)","value":451.99},{"trait_type":"Water Area (km^2)","value":60.01},{"trait_type":"Land Bias (%)","value":88.3},{"trait_type":"Highest Point From Sea Level (m)","v    alue":526.33},{"trait_type":"Lowest Point From Sea Level (m)","value":115.36},{"trait_type":"Elevation Variation (m)","value":410},{"trait_type":"Annual Rainfall (mm)","val    ue":1704},{"trait_type":"Wildlife Density","value":"High"},{"trait_type":"Aquatic Life Density","value":"Low"},{"trait_type":"Foliage Density","value":"Medium"},{"trait_typ    e":"Lumber (%)","value":11.9},{"trait_type":"Coal (%)","value":7.8},{"trait_type":"Oil (%)","value":3.9},{"trait_type":"Dirt (%)","value":47.2},{"trait_type":"Common Metals     (%)","value":12.8},{"trait_type":"Rare Metals (%)","value":2.5},{"trait_type":"Gemstones (%)","value":2.2},{"trait_type":"Fresh Water (%)","value":0.6},{"trait_type":"Salt     Water (%)","value":11.1},{"value":"Plains"},{"value":"Forest"},{"value":"River"},{"value":"Evergreen Forest"},{"value":"Giant Evergreen Forest"},{"value":"Swamp"},{"value"    :"Mountains"},{"value":"Wooded Mountains"},{"value":"Ore Mine"},{"value":"Witch's Hut"},{"value":"Town"},{"value":"Snow"},{"value":"Mountains"},{"value":"Oil Fields"},{"val    ue":"Monsoons"},{"value":"Scarce Freshwater"},{"value":"Ore Rich"},{"value":"Buried Jems"},{"value":"Woodlands"},{"value":"Witch Tales"},{"value":"Multi-Climate"}]}
+    let cid = await nebulus.add(Buffer.from(JSON.stringify(meta)))
+    console.log("cid", cid)
+    expect(cid.startsWith("bafk")).to.equal(true)
+    let token = await c0.token.create({
+      domain,
+      body: { cid: cid, }
+    })
+    console.log("TOKEN", token)
+    expect(token.body.encoding).to.equal(0)
+
+    await c0.token.send([token])
+    const tokenURI = await c0.token.methods(domain.address).tokenURI(token.body.id).call()
+    expect(tokenURI).to.equal("ipfs://" + cid)
+  })
+  it("metadata => raw encoding", async () => {
+    const meta = []
+    for(let i=0; i<10000; i++) {
+      meta.push(i)
+    }
+    console.log(JSON.stringify(meta))
+    let buffer = Buffer.from(JSON.stringify(meta))
+    console.log("byte", buffer.byteLength);
+    let cid = await nebulus.add(buffer)
+    console.log("cid", cid)
+    expect(cid.startsWith("bafk")).to.equal(true)
+    let token = await c0.token.create({
+      domain,
+      body: { cid: cid, }
+    })
+    console.log("TOKEN", token)
+    expect(token.body.encoding).to.equal(0)
 
     await c0.token.send([token])
     const tokenURI = await c0.token.methods(domain.address).tokenURI(token.body.id).call()

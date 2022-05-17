@@ -150,7 +150,7 @@ describe('withdraw', () => {
     await c0.init({ web3, key: process.env.RINKEBY_PRIVATE_KEY2 })
     // try to withdraw
     let tx = c0.token.methods(domain.address).withdraw(0).send()
-    await expect(tx).to.be.revertedWith("12")
+    await expect(tx).to.be.revertedWith("30")
   })
   it("setting the withdrawer to permanent means permanent", async () => {
     // set alice as the withdrawer
@@ -163,7 +163,7 @@ describe('withdraw', () => {
     tx = c0.token.methods(domain.address).setWithdrawer({
       account: util.bob.address,
     }).send()
-    await expect(tx).to.be.revertedWith("11");
+    await expect(tx).to.be.revertedWith("20");
   })
   it('setWithdrawer: if account2 is set as withdrawer, both the owner and account2 can withdraw', async () => {
     await c0.init({ web3, key: process.env.RINKEBY_PRIVATE_KEY2 })
@@ -245,7 +245,7 @@ describe('withdraw', () => {
     await c0.init({ web3, key: process.env.RINKEBY_PRIVATE_KEY2 })
 
     tx = c0.token.methods(domain.address).withdraw(0).send()
-    await expect(tx).to.be.revertedWith("12")
+    await expect(tx).to.be.revertedWith("30")
 
   })
   it('setWithdrawer: if the owner sets alice as withdrawer, calling withdraw() sends money to alice, not the owner', async () => {
@@ -304,4 +304,9 @@ describe('withdraw', () => {
     expect(balance.contract.afterWithdraw).to.equal("0")
 
   })
+//  it("cant withdraw if not owner", async () => {
+//    await c0.init({ web3, key: process.env.RINKEBY_PRIVATE_KEY2 })
+//
+//    tx = c0.token.methods(domain.address).withdraw(0).send()
+//  })
 })
