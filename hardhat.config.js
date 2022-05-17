@@ -13,7 +13,7 @@ require("@nomiclabs/hardhat-web3");
 task("deploy", "deploys the contract", async (args, hre) => {
   const [deployer] = await hre.ethers.getSigners();
   let Factory = await hre.ethers.getContractFactory('Factory');
-  let factory = await Factory.deploy();
+  let factory = await Factory.deploy({nonce: 327 });
   await factory.deployed();
   console.log("factory address", factory.address);
   await fs.promises.mkdir(path.resolve(__dirname, "./deployments"), { recursive: true }).catch((e) => {})
@@ -48,7 +48,8 @@ task("v", "verify on etherscan", async (args, hre) => {
 module.exports = {
   gasReporter: {
     currency: "USD",
-    gasPrice: 80,
+    //gasPrice: 80,
+//    gasPrice: 15,
 //    gasPrice: 150,
     coinmarketcap: process.env.COINMARKETCAP_API_KEY,
     enabled: true,
@@ -93,6 +94,7 @@ module.exports = {
     },
     rinkeby: {
       url: process.env.RINKEBY,
+//      gasPrice: 3000000000,
 //      timeout: 1000 * 60 * 60 * 24, // 1 day
       accounts: [process.env.RINKEBY_PRIVATE_KEY],
 //      accounts: [process.env.CLEAN2_PRIVATE_KEY],

@@ -178,7 +178,7 @@
   },
   {
     "inputs": [],
-    "name": "RELATIONSHIP_TYPE_HASH",
+    "name": "RELATION_TYPE_HASH",
     "outputs": [
       {
         "internalType": "bytes32",
@@ -704,11 +704,6 @@
             "type": "uint64"
           },
           {
-            "internalType": "uint8",
-            "name": "encoding",
-            "type": "uint8"
-          },
-          {
             "internalType": "address",
             "name": "sender",
             "type": "address"
@@ -729,8 +724,18 @@
             "type": "uint96"
           },
           {
+            "internalType": "uint8",
+            "name": "encoding",
+            "type": "uint8"
+          },
+          {
             "internalType": "bytes32",
-            "name": "merkleHash",
+            "name": "sendersHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "receiversHash",
             "type": "bytes32"
           },
           {
@@ -756,8 +761,8 @@
                 "type": "uint256"
               }
             ],
-            "internalType": "struct C0.Relationship[]",
-            "name": "relationships",
+            "internalType": "struct C0.Relation[]",
+            "name": "relations",
             "type": "tuple[]"
           },
           {
@@ -784,7 +789,12 @@
           },
           {
             "internalType": "bytes32[]",
-            "name": "merkle",
+            "name": "sendersProof",
+            "type": "bytes32[]"
+          },
+          {
+            "internalType": "bytes32[]",
+            "name": "receiversProof",
             "type": "bytes32[]"
           }
         ],
