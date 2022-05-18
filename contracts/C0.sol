@@ -172,6 +172,12 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
       // 2. Signature check
       //
 
+      // Payment[] handling
+      //
+      // A payment is either:
+      // 1. a payment made to an account on mint (code 0) => Make a transfer (payment.value / 10^6 percent of msg.value) to the payment.receiver
+      // 2. a payment made to an account for royalty (code 1) => Set the royalty info
+      //
       bytes32 paymenthash;
       if (body.payments.length > 0) {
         bytes memory paymentBytes;
@@ -190,7 +196,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
           }
           // code 1 (royalty)
           else {
-            // set royalty
+            // set royalty EIP-2981
             royalty[body.id] = Royalty(payment.receiver, payment.value);
           }
           unchecked {
@@ -362,13 +368,6 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
       //
       if (body.encoding != 0) encoding[body.id] = body.encoding;
 
-//      //
-//      // A.2. Set royalty: EIP-2981
-//      //
-//      if (body.royaltyReceiver != address(0)) {
-//        royalty[body.id] = Royalty(body.royaltyReceiver, body.royaltyAmount);
-//      }
-
       //
       // A.3. Mint the token
       //
@@ -480,8 +479,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
     //
     // Receiver: If "withdrawer" is set, the withdrawer. Otherwise, the contract owner
     //
-    (bool sent1, ) = payable(withdrawer.account == address(0) ? owner() : withdrawer.account).call{value: amount}("");
-    require(sent1, "31");
+    _transfer((withdrawer.account == address(0) ? owner() : withdrawer.account), amount);
 
   }
   function setState(uint _state) external onlyOwner {
