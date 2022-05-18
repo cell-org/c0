@@ -50,8 +50,13 @@ describe('royalty', () => {
       domain,
       body: {
         cid,
-        royaltyReceiver: util.bob.address,
-        royaltyAmount: 10000
+        payments:[{
+          code: 1,
+          receiver: util.bob.address,
+          value: 10000
+        }]
+//        royaltyReceiver: util.bob.address,
+//        royaltyAmount: 10000
       }
     })
     let tx = await c0.token.send([token])
@@ -80,8 +85,13 @@ describe('royalty', () => {
       domain,
       body: {
         cid: cid,
-        royaltyReceiver: "0x502b2FE7Cc3488fcfF2E16158615AF87b4Ab5C41",
-        royaltyAmount: 10**5 // 10%
+        payments: [{
+          code: 1,
+          receiver: "0x502b2FE7Cc3488fcfF2E16158615AF87b4Ab5C41",
+          value: 10 ** 5  // 10%
+        }]
+//        royaltyReceiver: "0x502b2FE7Cc3488fcfF2E16158615AF87b4Ab5C41",
+//        royaltyAmount: 10**5 // 10%
       }
     })
     console.log("token", token)

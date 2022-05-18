@@ -55,8 +55,9 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
   event StateUpdated(uint indexed state);
   event BaseURIUpdated(string uri);
   event NSUpdated(string name, string symbol);
+  bytes32 public constant PAYMENT_TYPE_HASH = keccak256("Payment(uint8 code,uint24 value,address receiver)");
   bytes32 public constant RELATION_TYPE_HASH = keccak256("Relation(uint8 code,address addr,uint256 id)");
-  bytes32 public constant BODY_TYPE_HASH = keccak256("Body(uint256 id,uint8 encoding,address sender,address receiver,uint128 value,uint64 start,uint64 end,address royaltyReceiver,uint96 royaltyAmount,bytes32 sendersHash,bytes32 receiversHash,bytes32 puzzleHash,Relation[] relations)Relation(uint8 code,address addr,uint256 id)");
+  bytes32 public constant BODY_TYPE_HASH = keccak256("Body(uint256 id,uint8 encoding,address sender,address receiver,uint128 value,uint64 start,uint64 end,Payment[] payments,bytes32 sendersHash,bytes32 receiversHash,bytes32 puzzleHash,Relation[] relations)Payment(uint8 code,uint24 value,address receiver)Relation(uint8 code,address addr,uint256 id)");
   bytes32 private constant EMPTY_ARRAY_HASH = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470; // keccak256(abi.encodePacked(new bytes32[](0)))
 
   //
@@ -67,6 +68,11 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
     address addr;   // contract address
     uint256 id;     // tokenId/value
   }
+  struct Payment {
+    uint8 code;
+    uint24 value;
+    address receiver;
+  }
   struct Body {
     uint256 id;
     uint128 value;
@@ -74,8 +80,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
     uint64 end;
     address sender;
     address receiver;
-    address royaltyReceiver;
-    uint96 royaltyAmount;
+    Payment[] payments;
     uint8 encoding; // 0: raw, 1: dag-pb
     bytes32 sendersHash;
     bytes32 receiversHash;
@@ -86,8 +91,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
   struct Gift {
     uint256 id;
     address receiver;
-    address royaltyReceiver;
-    uint96 royaltyAmount;
+    Payment[] payments;
     uint8 encoding; // 0: raw, 1: dag-pb
   }
   struct Input {
@@ -137,8 +141,8 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
     for(uint i=0;i<gifts.length;) {
       Gift calldata g = gifts[i];
       _mint(g.receiver, g.id);
-      if (g.royaltyReceiver != address(0)) {
-        royalty[g.id] = Royalty(g.royaltyReceiver, g.royaltyAmount);
+      if (g.payments.length > 0) {
+        royalty[g.id] = Royalty(g.payments[0].receiver, g.payments[0].value);
       }
       unchecked { ++i; }
     }
@@ -167,6 +171,37 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
       //
       // 2. Signature check
       //
+
+      bytes32 paymenthash;
+      if (body.payments.length > 0) {
+        bytes memory paymentBytes;
+        for(uint k=0; k<body.payments.length;) {
+          Payment memory payment = body.payments[k];
+          paymentBytes = abi.encodePacked(paymentBytes, keccak256(abi.encode(
+            PAYMENT_TYPE_HASH,
+            payment.code,
+            payment.value,
+            payment.receiver
+          )));
+          // code: 0 (mint)
+          if (payment.code == 0) {
+            // split payment to payment.receiver
+            _transfer(payment.receiver, msg.value * payment.value / 1000000);
+          }
+          // code 1 (royalty)
+          else {
+            // set royalty
+            royalty[body.id] = Royalty(payment.receiver, payment.value);
+          }
+          unchecked {
+            ++k;
+          }
+        }
+        paymenthash = keccak256(paymentBytes);
+      } else {
+        paymenthash = EMPTY_ARRAY_HASH;
+      }
+
       if (body.relations.length == 0) {
         // split out into 2 chunks because of the stack limit
         bytes32 bodyhash = keccak256(
@@ -179,8 +214,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
             body.value,
             body.start,
             body.end,
-            body.royaltyReceiver,
-            body.royaltyAmount,
+            paymenthash,
             body.sendersHash,
             body.receiversHash,
             body.puzzleHash,
@@ -273,8 +307,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
           abi.encode(
             body.start,
             body.end,
-            body.royaltyReceiver,
-            body.royaltyAmount,
+            paymenthash,
             body.sendersHash,
             body.receiversHash,
             body.puzzleHash,
@@ -329,12 +362,12 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
       //
       if (body.encoding != 0) encoding[body.id] = body.encoding;
 
-      //
-      // A.2. Set royalty: EIP-2981
-      //
-      if (body.royaltyReceiver != address(0)) {
-        royalty[body.id] = Royalty(body.royaltyReceiver, body.royaltyAmount);
-      }
+//      //
+//      // A.2. Set royalty: EIP-2981
+//      //
+//      if (body.royaltyReceiver != address(0)) {
+//        royalty[body.id] = Royalty(body.royaltyReceiver, body.royaltyAmount);
+//      }
 
       //
       // A.3. Mint the token
@@ -466,5 +499,13 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
     _name = name_; 
     _symbol = symbol_;
     emit NSUpdated(_name, _symbol);
+  }
+  error TransferFailed();
+  function _transfer(address to, uint256 amount) internal {
+    bool callStatus;
+    assembly {
+      callStatus := call(gas(), to, amount, 0, 0, 0, 0)
+    }
+    if (!callStatus) revert TransferFailed();
   }
 }
