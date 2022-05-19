@@ -1,5 +1,10 @@
 [
   {
+    "inputs": [],
+    "name": "TransferFailed",
+    "type": "error"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -324,19 +329,31 @@
             "type": "address"
           },
           {
-            "internalType": "address",
-            "name": "royaltyReceiver",
-            "type": "address"
-          },
-          {
-            "internalType": "uint96",
-            "name": "royaltyAmount",
-            "type": "uint96"
-          },
-          {
             "internalType": "uint8",
             "name": "encoding",
             "type": "uint8"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint8",
+                "name": "code",
+                "type": "uint8"
+              },
+              {
+                "internalType": "address",
+                "name": "addr",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct C0.Relation[]",
+            "name": "relations",
+            "type": "tuple[]"
           }
         ],
         "internalType": "struct C0.Gift[]",
@@ -712,16 +729,6 @@
             "internalType": "address",
             "name": "receiver",
             "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "royaltyReceiver",
-            "type": "address"
-          },
-          {
-            "internalType": "uint96",
-            "name": "royaltyAmount",
-            "type": "uint96"
           },
           {
             "internalType": "uint8",

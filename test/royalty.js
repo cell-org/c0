@@ -50,8 +50,12 @@ describe('royalty', () => {
       domain,
       body: {
         cid,
-        royaltyReceiver: util.bob.address,
-        royaltyAmount: 10000
+        royalty: {
+          where: util.bob.address,
+          what: 10000
+        }
+//        royaltyReceiver: util.bob.address,
+//        royaltyAmount: 10000
       }
     })
     let tx = await c0.token.send([token])
@@ -80,8 +84,12 @@ describe('royalty', () => {
       domain,
       body: {
         cid: cid,
-        royaltyReceiver: "0x502b2FE7Cc3488fcfF2E16158615AF87b4Ab5C41",
-        royaltyAmount: 10**5 // 10%
+        royalty: {
+          where: "0x502b2FE7Cc3488fcfF2E16158615AF87b4Ab5C41",
+          what: 10 ** 5  // 10%
+        }
+//        royaltyReceiver: "0x502b2FE7Cc3488fcfF2E16158615AF87b4Ab5C41",
+//        royaltyAmount: 10**5 // 10%
       }
     })
     console.log("token", token)
@@ -95,5 +103,27 @@ describe('royalty', () => {
     expect(royaltyInfo.royaltyAmount).to.equal("" + 42 * 10 ** 5)
     expect(royaltyInfo.receiver).to.equal("0x502b2FE7Cc3488fcfF2E16158615AF87b4Ab5C41")
     
+  })
+  it('gift with royalty', async () => {
+    let gift = await c0.gift.create({
+      body: {
+        cid,
+        receiver: "0x502b2FE7Cc3488fcfF2E16158615AF87b4Ab5C41",
+        royalty: {
+          where: "0x502b2FE7Cc3488fcfF2E16158615AF87b4Ab5C41",
+          what: 10 ** 5  // 10%
+        }
+      },
+      domain
+    })
+    console.log("gift", JSON.stringify(gift, null, 2))
+    let tx = await c0.gift.send([gift])
+    let owner = await c0.token.methods(domain.address).ownerOf(gift.body.id).call()
+    console.log("owner", owner)
+    expect(owner).to.equal("0x502b2FE7Cc3488fcfF2E16158615AF87b4Ab5C41")
+    let ro = await c0.token.methods(domain.address).royaltyInfo(gift.body.id, 300).call()
+    console.log(ro)
+    expect(ro.royaltyAmount).to.equal('30')
+    expect(ro.receiver).to.equal("0x502b2FE7Cc3488fcfF2E16158615AF87b4Ab5C41")
   })
 })
