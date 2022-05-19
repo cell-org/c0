@@ -183,19 +183,6 @@
   },
   {
     "inputs": [],
-    "name": "PAYMENT_TYPE_HASH",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "RELATION_TYPE_HASH",
     "outputs": [
       {
@@ -342,6 +329,11 @@
             "type": "address"
           },
           {
+            "internalType": "uint8",
+            "name": "encoding",
+            "type": "uint8"
+          },
+          {
             "components": [
               {
                 "internalType": "uint8",
@@ -349,24 +341,19 @@
                 "type": "uint8"
               },
               {
-                "internalType": "uint24",
-                "name": "value",
-                "type": "uint24"
+                "internalType": "address",
+                "name": "addr",
+                "type": "address"
               },
               {
-                "internalType": "address",
-                "name": "receiver",
-                "type": "address"
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
               }
             ],
-            "internalType": "struct C0.Payment[]",
-            "name": "payments",
+            "internalType": "struct C0.Relation[]",
+            "name": "relations",
             "type": "tuple[]"
-          },
-          {
-            "internalType": "uint8",
-            "name": "encoding",
-            "type": "uint8"
           }
         ],
         "internalType": "struct C0.Gift[]",
@@ -742,28 +729,6 @@
             "internalType": "address",
             "name": "receiver",
             "type": "address"
-          },
-          {
-            "components": [
-              {
-                "internalType": "uint8",
-                "name": "code",
-                "type": "uint8"
-              },
-              {
-                "internalType": "uint24",
-                "name": "value",
-                "type": "uint24"
-              },
-              {
-                "internalType": "address",
-                "name": "receiver",
-                "type": "address"
-              }
-            ],
-            "internalType": "struct C0.Payment[]",
-            "name": "payments",
-            "type": "tuple[]"
           },
           {
             "internalType": "uint8",
