@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "/Users/x/Projects/cell/contracts/c0/contracts/C0.sol": {
-      "lastModificationDate": 1652943368355,
-      "contentHash": "b9c06ca8052f78945671dc1128e1f617",
+      "lastModificationDate": 1652943984303,
+      "contentHash": "e22c0d45ccd9e0eda58b0ed5c568fcaa",
       "sourceName": "contracts/C0.sol",
       "solcConfig": {
         "version": "0.8.9",
@@ -32,8 +32,7 @@
         "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol",
         "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol",
         "@openzeppelin/contracts-upgradeable/utils/cryptography/draft-EIP712Upgradeable.sol",
-        "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol",
-        "hardhat/console.sol"
+        "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol"
       ],
       "versionPragmas": [
         "^0.8.9"
