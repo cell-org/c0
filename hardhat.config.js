@@ -13,7 +13,8 @@ require("@nomiclabs/hardhat-web3");
 task("deploy", "deploys the contract", async (args, hre) => {
   const [deployer] = await hre.ethers.getSigners();
   let Factory = await hre.ethers.getContractFactory('Factory');
-  let factory = await Factory.deploy({nonce: 327 });
+  //let factory = await Factory.deploy({nonce: 327 });
+  let factory = await Factory.deploy();
   await factory.deployed();
   console.log("factory address", factory.address);
   await fs.promises.mkdir(path.resolve(__dirname, "./deployments"), { recursive: true }).catch((e) => {})

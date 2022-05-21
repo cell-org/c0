@@ -56,7 +56,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
   event BaseURIUpdated(string uri);
   event NSUpdated(string name, string symbol);
   bytes32 public constant RELATION_TYPE_HASH = keccak256("Relation(uint8 code,address addr,uint256 id)");
-  bytes32 public constant BODY_TYPE_HASH = keccak256("Body(uint256 id,uint8 encoding,address sender,address receiver,uint128 value,uint64 start,uint64 end,address royaltyReceiver,uint96 royaltyAmount,bytes32 sendersHash,bytes32 receiversHash,bytes32 puzzleHash,Relation[] relations)Relation(uint8 code,address addr,uint256 id)");
+  bytes32 public constant BODY_TYPE_HASH = keccak256("Body(uint256 id,uint8 encoding,address sender,address receiver,uint128 value,uint64 start,uint64 end,bytes32 sendersHash,bytes32 receiversHash,bytes32 puzzleHash,Relation[] relations)Relation(uint8 code,address addr,uint256 id)");
   bytes32 private constant EMPTY_ARRAY_HASH = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470; // keccak256(abi.encodePacked(new bytes32[](0)))
 
   //
@@ -74,8 +74,6 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
     uint64 end;
     address sender;
     address receiver;
-    address royaltyReceiver;
-    uint96 royaltyAmount;
     uint8 encoding; // 0: raw, 1: dag-pb
     bytes32 sendersHash;
     bytes32 receiversHash;
@@ -86,9 +84,8 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
   struct Gift {
     uint256 id;
     address receiver;
-    address royaltyReceiver;
-    uint96 royaltyAmount;
     uint8 encoding; // 0: raw, 1: dag-pb
+    Relation[] relations;
   }
   struct Input {
     address receiver;
@@ -137,8 +134,8 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
     for(uint i=0;i<gifts.length;) {
       Gift calldata g = gifts[i];
       _mint(g.receiver, g.id);
-      if (g.royaltyReceiver != address(0)) {
-        royalty[g.id] = Royalty(g.royaltyReceiver, g.royaltyAmount);
+      if (g.relations.length > 0) {
+        royalty[g.id] = Royalty(g.relations[0].addr, uint96(g.relations[0].id));
       }
       unchecked { ++i; }
     }
@@ -168,7 +165,6 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
       // 2. Signature check
       //
       if (body.relations.length == 0) {
-        // split out into 2 chunks because of the stack limit
         bytes32 bodyhash = keccak256(
           abi.encode(
             BODY_TYPE_HASH,
@@ -179,8 +175,6 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
             body.value,
             body.start,
             body.end,
-            body.royaltyReceiver,
-            body.royaltyAmount,
             body.sendersHash,
             body.receiversHash,
             body.puzzleHash,
@@ -190,11 +184,22 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
         require(_hashTypedDataV4(bodyhash).recover(body.signature) == owner(), "2");
       } else {
         bytes memory relationBytes;
+        uint outgoing;
+
+        //
+        // Relation handling
+        // A relation is the token's relationship with another address.
+        // It can be either incoming (INPUTS) or outgoing (OUTPUTS)
+        //
+        // Inputs: decides whether the virtual machine will accept the conditions related to other addresses
+        // Outputs: dictates how payments will be sent out (either the mint revenue or the royalty revenue)
+        //
         for(uint j=0; j<body.relations.length;) {
           Relation memory relation = body.relations[j];
-
           //
           // relation.code :=
+          //  
+          //    INPUTS: input conditions
           //    0: burned by sender
           //    1: burned by receiver
           //    2: owned by sender
@@ -202,7 +207,12 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
           //    4. balance by sender
           //    5. balance by receiver
           //
+          //    OUTPUTS: output transfer declarations
+          //    10. mint payment handling
+          //    11. royalty payment handling
+          //
 
+          // INPUT
           // 0. burned by sender
           if (relation.code == 0) {
             if (relation.addr == address(0)) {
@@ -251,6 +261,18 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
               require(IRelation(relation.addr).balanceOf(receiver) >= relation.id, "10b");
             }
           }
+
+          // OUTPUT
+          // 10. Make a transfer (relation.id / 10^6 percent of msg.value) to the relation.receiver
+          else if (relation.code == 10) {
+            outgoing += relation.id;
+            require(outgoing <= 1e6, "10c");  // must not exceed 1,000,000 (1e6)
+            _transfer(relation.addr, msg.value * relation.id / 1e6);
+          }
+          // 11. Set EIP-2981 royalty info
+          else if (relation.code == 11) {
+            royalty[body.id] = Royalty(relation.addr, uint96(relation.id));
+          }
           relationBytes = abi.encodePacked(relationBytes, keccak256(abi.encode(
             RELATION_TYPE_HASH,
             relation.code,
@@ -261,26 +283,22 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
             ++j;
           }
         }
-        bytes32 bodyhash = keccak256(bytes.concat(
+        bytes32 bodyhash = keccak256(
           abi.encode(
             BODY_TYPE_HASH,
             body.id,
             body.encoding,
             body.sender,
             body.receiver,
-            body.value
-          ),
-          abi.encode(
+            body.value,
             body.start,
             body.end,
-            body.royaltyReceiver,
-            body.royaltyAmount,
             body.sendersHash,
             body.receiversHash,
             body.puzzleHash,
             keccak256(relationBytes)
           )
-        ));
+        );
         require(_hashTypedDataV4(bodyhash).recover(body.signature) == owner(), "2");
       }
 
@@ -330,14 +348,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
       if (body.encoding != 0) encoding[body.id] = body.encoding;
 
       //
-      // A.2. Set royalty: EIP-2981
-      //
-      if (body.royaltyReceiver != address(0)) {
-        royalty[body.id] = Royalty(body.royaltyReceiver, body.royaltyAmount);
-      }
-
-      //
-      // A.3. Mint the token
+      // A.2. Mint the token
       //
       _mint(receiver, body.id);
 
@@ -414,7 +425,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
   //
   function royaltyInfo(uint tokenId, uint value) external view returns (address receiver, uint256 royaltyAmount) {
     Royalty memory r = royalty[tokenId];
-    return (r.receiver, value * r.amount/1000000);
+    return (r.receiver, value * r.amount/1e6);  // total 1e6 (1,000,000)
   }
   function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721Upgradeable) returns (bool) {
     return (interfaceId == 0x2a55205a || super.supportsInterface(interfaceId));
@@ -447,8 +458,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
     //
     // Receiver: If "withdrawer" is set, the withdrawer. Otherwise, the contract owner
     //
-    (bool sent1, ) = payable(withdrawer.account == address(0) ? owner() : withdrawer.account).call{value: amount}("");
-    require(sent1, "31");
+    _transfer((withdrawer.account == address(0) ? owner() : withdrawer.account), amount);
 
   }
   function setState(uint _state) external onlyOwner {
@@ -466,5 +476,13 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
     _name = name_; 
     _symbol = symbol_;
     emit NSUpdated(_name, _symbol);
+  }
+  error TransferFailed();
+  function _transfer(address to, uint256 amount) internal {
+    bool callStatus;
+    assembly {
+      callStatus := call(gas(), to, amount, 0, 0, 0, 0)
+    }
+    if (!callStatus) revert TransferFailed();
   }
 }
