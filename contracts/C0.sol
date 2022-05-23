@@ -130,7 +130,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
   // gift tokens (c0.gift.send())
   //
   function gift(Gift[] calldata gifts) external payable onlyOwner {
-    require(state == 0, "0");
+    require(state == 0, "0");   // cannot gift when the state is paused or frozen
     for(uint i=0;i<gifts.length;) {
       Gift calldata g = gifts[i];
       _mint(g.receiver, g.id);
@@ -145,7 +145,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
   // mint tokens (c0.token.send())
   //
   function token(Body[] calldata bodies, Input[] calldata inputs) external payable {
-    require(state == 0, "0");
+    require(state == 0, "0");   // cannot mint when the state is paused or frozen
     uint val;
     for(uint i=0; i<bodies.length;) {
       Body calldata body = bodies[i];
@@ -154,7 +154,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
       //
       // 1. Burned check: disallow reminting if already burned
       //
-      require(burned[body.id] == address(0), "1");
+      require(burned[body.id] == address(0), "1");    // cannot mint if it was already burned
 
       // Who receives the token when minted?
       // if body.receiver is set (not 0) => body.receiver
@@ -181,7 +181,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
             EMPTY_ARRAY_HASH
           )
         );
-        require(_hashTypedDataV4(bodyhash).recover(body.signature) == owner(), "2");
+        require(_hashTypedDataV4(bodyhash).recover(body.signature) == owner(), "2");    // check script signature
       } else {
         bytes memory relationBytes;
         uint outgoing;
@@ -216,49 +216,49 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
           // 0. burned by sender
           if (relation.code == 0) {
             if (relation.addr == address(0)) {
-              require(burned[relation.id] == _msgSender(), "8a");
+              require(burned[relation.id] == _msgSender(), "8a");   // local burnership check for sender
             } else {
-              require(IRelation(relation.addr).burned(relation.id) == _msgSender(), "8a");
+              require(IRelation(relation.addr).burned(relation.id) == _msgSender(), "8a");    // remote contract burnership check for sender
             }
           }
           // 1. burned by receiver
           else if (relation.code == 1) {
             if (relation.addr == address(0)) {
-              require(burned[relation.id] == receiver, "8b");
+              require(burned[relation.id] == receiver, "8b");   // local burnership check for receiver
             } else {
-              require(IRelation(relation.addr).burned(relation.id) == receiver, "8b");
+              require(IRelation(relation.addr).burned(relation.id) == receiver, "8b");    // remote contract burnership check for receiver
             }
           }
           // 2. owned by sender
           else if (relation.code == 2) {
             if (relation.addr == address(0)) {
-              require(ownerOf(relation.id) == _msgSender(), "9a");
+              require(ownerOf(relation.id) == _msgSender(), "9a");    // local ownership check for sender
             } else {
-              require(IRelation(relation.addr).ownerOf(relation.id) == _msgSender(), "9a");
+              require(IRelation(relation.addr).ownerOf(relation.id) == _msgSender(), "9a");   // remote contract ownership check for sender
             }
           }
           // 3. owned by receiver
           else if (relation.code == 3) {
             if (relation.addr == address(0)) {
-              require(ownerOf(relation.id) == receiver, "9b");
+              require(ownerOf(relation.id) == receiver, "9b");    // local ownership check for receiver
             } else {
-              require(IRelation(relation.addr).ownerOf(relation.id) == receiver, "9b");
+              require(IRelation(relation.addr).ownerOf(relation.id) == receiver, "9b");   // remote contract ownership check for receiver
             }
           }
           //  4. balance by sender
           else if (relation.code == 4) {
             if (relation.addr == address(0)) {
-              require(balanceOf(_msgSender()) >= relation.id, "10a");
+              require(balanceOf(_msgSender()) >= relation.id, "10a");   // local balance check for sender
             } else {
-              require(IRelation(relation.addr).balanceOf(_msgSender()) >= relation.id, "10a");
+              require(IRelation(relation.addr).balanceOf(_msgSender()) >= relation.id, "10a");    // remote contract balance check for sender
             }
           }
           //  5. balance by receiver
           else if (relation.code == 5) {
             if (relation.addr == address(0)) {
-              require(balanceOf(receiver) >= relation.id, "10b");
+              require(balanceOf(receiver) >= relation.id, "10b");   // local balance check for receiver
             } else {
-              require(IRelation(relation.addr).balanceOf(receiver) >= relation.id, "10b");
+              require(IRelation(relation.addr).balanceOf(receiver) >= relation.id, "10b");    // remote contract balance check for receiver
             }
           }
 
@@ -266,7 +266,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
           // 10. Make a transfer (relation.id / 10^6 percent of msg.value) to the relation.receiver
           else if (relation.code == 10) {
             outgoing += relation.id;
-            require(outgoing <= 1e6, "10c");  // must not exceed 1,000,000 (1e6)
+            require(outgoing <= 1e6, "10c");  // the sum of all payment split shares must not exceed 1,000,000 (1e6)
             _transfer(relation.addr, msg.value * relation.id / 1e6);
           }
           // 11. Set EIP-2981 royalty info
@@ -299,39 +299,39 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
             keccak256(relationBytes)
           )
         );
-        require(_hashTypedDataV4(bodyhash).recover(body.signature) == owner(), "2");
+        require(_hashTypedDataV4(bodyhash).recover(body.signature) == owner(), "2");    // check script signature
       }
 
       //
       // 3. Sender check: if body.sender is specified, the body.sender must match _msgSender()
       //
-      if (body.sender != address(0)) require(body.sender == _msgSender(), "3");
+      if (body.sender != address(0)) require(body.sender == _msgSender(), "3");   // sender lock validation
 
       //
       // 4. Start timelock check
       //
-      require(body.start <= block.timestamp, "4");
+      require(body.start <= block.timestamp, "4");    // start time lock validation
 
       //
       // 5. End timelock check
       //
-      require(body.end >= block.timestamp, "5");
+      require(body.end >= block.timestamp, "5");    // end time lock validation
 
       //
       // 6. Puzzle input check => the hash of the provided preimage string (input.puzzle) must match the hash (body.puzzleHash)
       //
       if (body.puzzleHash != 0) {
-        require(input.puzzle.length > 0 && keccak256(input.puzzle) == body.puzzleHash, "6");
+        require(input.puzzle.length > 0 && keccak256(input.puzzle) == body.puzzleHash, "6");    // hash puzzle lock validation
       }
 
       //
       // 7. Merkle input check => The _msgSender() must be included in the merkle tree specified by the body.merkleHash (verified using merkleproof input.merkle)
       //
       if (body.sendersHash != 0) {
-        require(verify(body.sendersHash, input.sendersProof, _msgSender()), "7a");
+        require(verify(body.sendersHash, input.sendersProof, _msgSender()), "7a");    // senders merkle proof lock validation
       }
       if (body.receiversHash != 0) {
-        require(verify(body.receiversHash, input.receiversProof, receiver), "7b");
+        require(verify(body.receiversHash, input.receiversProof, receiver), "7b");    // receivers merkle proof lock validation
       }
 
 
@@ -361,12 +361,12 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
     //
     // 10. Revert everything if not enough money was sent
     //
-    require(val == msg.value, "11");
+    require(val == msg.value, "11");    // value lock validation
   }
   function burn(uint[] calldata _tokenIds) external {
     for(uint i=0; i<_tokenIds.length;) {
       uint _tokenId = _tokenIds[i];
-      require(_isApprovedOrOwner(_msgSender(), _tokenId), "15");
+      require(_isApprovedOrOwner(_msgSender(), _tokenId), "15");    // only the owner or the approved can burn
       _burn(_tokenId);
       burned[_tokenId] = _msgSender();
       unchecked {
@@ -435,7 +435,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
   // Admin functions
   //
   function setWithdrawer(Withdrawer calldata _withdrawer) external onlyOwner {
-    require(!withdrawer.permanent, "20");
+    require(!withdrawer.permanent, "20");   // only can set withdrawer if it's not yet permanent
     withdrawer = _withdrawer; 
     emit WithdrawerUpdated(_withdrawer);
   }
@@ -444,7 +444,7 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
     //
     // Authorization: Either the owner or the withdrawer (in case it's set) can initiate withdraw()
     //
-    require(_msgSender() == owner() || _msgSender() == withdrawer.account, "30");
+    require(_msgSender() == owner() || _msgSender() == withdrawer.account, "30");   // only the owner or the withdrawer (if set) can trigger a withdraw
 
     //
     // Custom withdrawl: value + receiver
@@ -462,17 +462,17 @@ contract C0 is Initializable, ERC721Upgradeable, OwnableUpgradeable, EIP712Upgra
 
   }
   function setState(uint _state) external onlyOwner {
-    require(state != 2, "40");
+    require(state != 2, "40");    // can set state only when the state is not frozen (2)
     state = _state;
     emit StateUpdated(_state);
   }
   function setBaseURI(string calldata b) external onlyOwner {
-    require(state == 0, "50");
+    require(state == 0, "50");    // can set baseURI only when the state is not frozen (2)
     baseURI = b;
     emit BaseURIUpdated(b);
   }
   function setNS(string calldata name_, string calldata symbol_) external onlyOwner {
-    require(state == 0, "60");
+    require(state == 0, "60");    // can set name and symbol only when the state is not frozen (2)
     _name = name_; 
     _symbol = symbol_;
     emit NSUpdated(_name, _symbol);

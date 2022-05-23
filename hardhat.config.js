@@ -21,6 +21,25 @@ task("deploy", "deploys the contract", async (args, hre) => {
   await fs.promises.writeFile(path.resolve(__dirname, `./deployments/${hre.network.name}.json`), JSON.stringify({ address: factory.address }))
   return factory;
 })
+task("errorgen", "generates an error code mapping JSON", async (args, hre) => {
+  let lines = await fs.promises.readFile("contracts/C0.sol", "utf8").then((c) => {
+    return c.split("\n")
+  })
+  let errorlines = lines.filter((line) => {
+    return /require\(/.test(line)
+  }).map((line) => {
+    return line.trim()
+  })
+
+  let errors = {}
+  for(let line of errorlines) {
+    let match = /"([^\"]+)"\);/.exec(line)
+    console.log(match)
+    let matched = match[1]
+    errors[matched] = line
+  }
+  console.log(errors)
+})
 task("v", "verify on etherscan", async (args, hre) => {
   console.log("x")
   const FACTORY_ABI = require(path.resolve(__dirname, "./abi/contracts/Factory.sol/Factory.json"));
