@@ -75,7 +75,6 @@ describe('withdraw', () => {
 
     // withdraw all
     tx = await c0.token.methods(domain.address).withdraw(0).send()
-    console.log("tx", tx)
 
     balance.contract.afterWithdraw = await web3.eth.getBalance(domain.address)
     balance.deployer.afterWithdraw = await web3.eth.getBalance(c0.account)
@@ -122,7 +121,6 @@ describe('withdraw', () => {
 
     // withdraw only 3ETH
     tx = await c0.token.methods(domain.address).withdraw("" + 3 * Math.pow(10, 18)).send()
-    console.log("tx", tx)
 
     balance.contract.afterWithdraw = await web3.eth.getBalance(domain.address)
     balance.deployer.afterWithdraw = await web3.eth.getBalance(c0.account)
@@ -200,7 +198,6 @@ describe('withdraw', () => {
     balance.account2.afterWithdraw = await web3.eth.getBalance(account2)
 
     // withdrawer balance increased by 1ETH
-    console.log("balance", balance)
     expect(new web3.utils.BN(balance.account2.afterWithdraw).toString()).to.equal(
       new web3.utils.BN(balance.account2.beforeWithdraw)
         .add(new web3.utils.BN("" + Math.pow(10, 18))).toString()
@@ -256,7 +253,6 @@ describe('withdraw', () => {
     }).send()
 
     let withdrawer = await c0.token.methods(domain.address).withdrawer().call()
-    console.log("WITHDRAWER", withdrawer)
     expect(withdrawer.account).to.equal(util.alice.address)
 
     let balance = {

@@ -57,10 +57,8 @@ describe('send', () => {
         start: 0,
       }
     })
-    console.log("TOKEN", token)
     let tx = await c0.token.send([token])
     let owner = await c0.token.methods(domain.address).ownerOf(id(cidDigest)).call()
-    console.log("owner", owner)
     expect(owner).to.equal(c0.account)
 
 
@@ -80,7 +78,6 @@ describe('send', () => {
         cid: cid,
       }
     })
-    console.log("TOKEN", token)
     //let tx = await c0.token.send([token])
 
     let token2 = await c0.token.create({
@@ -92,7 +89,6 @@ describe('send', () => {
     let tx = await c0.token.send([token, token2])
 
     let owner = await c0.token.methods(domain.address).ownerOf(id(cidDigest)).call()
-    console.log("owner", owner)
     expect(owner).to.equal(c0.account)
 
 
@@ -112,7 +108,6 @@ describe('send', () => {
         start: 0,
       }
     })
-    console.log("TOKEN", token)
     let tx = await c0.token.send([token])
 
     // burn gets rid of the token
@@ -130,7 +125,6 @@ describe('send', () => {
         receiver: util.bob.address
       }
     })
-    console.log("TOKEN", token)
     let tx = await c0.token.send([token])
 
     // burn gets rid of the token

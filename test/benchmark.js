@@ -69,10 +69,8 @@ const bootstrap = async () => {
   await c0.init({ web3, key: process.env.RINKEBY_PRIVATE_KEY })
   // get address for the custom wallet
   // send some funds to the custom wallet address so it has the money to do stuff
-  console.log("factory address", util.factory.address)
 
   let implementation = await c0.collection.methods(util.factory.address).implementation().call()
-  console.log("implementation", implementation)
 
   let tx0 = await web3.eth.sendTransaction({
     from: util.deployer.address,
@@ -130,7 +128,6 @@ describe('benchmark', () => {
         })
         tokens.push(token)
       }
-      console.log(tokens)
       let tx = await c0.token.send(tokens, [])
       let r = rates[s] / 10
       let eth = tx.gasUsed * r / Math.pow(10, 9)

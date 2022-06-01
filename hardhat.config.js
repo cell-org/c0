@@ -98,7 +98,8 @@ module.exports = {
 //      },
       chainId: 1337,
       timeout: 1000 * 60 * 60 * 24, // 1 day
-      gas: 12000000,
+      //gas: 12000000,
+      gas: 15000000,
       blockGasLimit: 0x1fffffffffffff,
       allowUnlimitedContractSize: true,
 
@@ -116,17 +117,19 @@ module.exports = {
       url: process.env.RINKEBY,
 //      gasPrice: 3000000000,
 //      timeout: 1000 * 60 * 60 * 24, // 1 day
-      accounts: [process.env.RINKEBY_PRIVATE_KEY],
+      //accounts: [process.env.RINKEBY_PRIVATE_KEY],
+      accounts: [process.env.CELL_PRIVATE_KEY],
 //      accounts: [process.env.CLEAN2_PRIVATE_KEY],
     },
     mainnet: {
 //      gasPrice: 74000000000,
 //      gasPrice: 70000000000,
-      //gasPrice: 10000000000,
-      gasPrice: 16000000000,
+      gasPrice: 15000000000,
+      //gasPrice: 16000000000,
       timeout: 1000 * 60 * 60 * 24, // 1 day
       url: process.env.MAINNET,
-      accounts: [process.env.MAINNET_PRIVATE_KEY],
+      //accounts: [process.env.MAINNET_PRIVATE_KEY],
+      accounts: [process.env.CELL_PRIVATE_KEY],
     }
   },
   etherscan: {

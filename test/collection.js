@@ -27,7 +27,6 @@ describe('collection', () => {
   })
   it('should be able to predict future contract addresses from offline', async () => {
     const implementation = await c0.collection.methods(util.factory.address).implementation().call()
-    console.log("implementation", implementation)
     // predict collection addresses
     const collections = await c0.collection.find({
       factory: util.factory.address,
@@ -65,7 +64,6 @@ describe('collection', () => {
         name: "Hello",
         symbol: "WORLD"
       })
-      console.log("TX", tx)
       // compare created contract addresses with the predicted addresses
       expect(tx.events.OwnershipTransferred[0].address.toLowerCase())
       .to.equal(cs[i].toLowerCase())

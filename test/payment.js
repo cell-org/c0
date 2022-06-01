@@ -66,10 +66,8 @@ const bootstrap = async () => {
   await c0.init({ web3, key: process.env.RINKEBY_PRIVATE_KEY })
   // get address for the custom wallet
   // send some funds to the custom wallet address so it has the money to do stuff
-  console.log("factory address", util.factory.address)
 
   let implementation = await c0.collection.methods(util.factory.address).implementation().call()
-  console.log("implementation", implementation)
 
   let tx0 = await web3.eth.sendTransaction({
     from: util.deployer.address,
@@ -108,15 +106,11 @@ describe('send', () => {
         }]
       }
     })
-    console.log("TOKEN", JSON.stringify(token, null, 2))
     let balanceContractBefore = await getBalance(domain.address)
     let balanceAliceBefore = await getBalance(util.alice.address)
     let tx = await c0.token.send([token], [])
     let balanceContractAfter = await getBalance(domain.address)
     let balanceAliceAfter = await getBalance(util.alice.address)
-
-    console.log(balanceContractBefore, balanceContractAfter)
-    console.log(balanceAliceBefore, balanceAliceAfter)
 
     expect(balanceContractAfter.sub(balanceContractBefore).toString()).to.equal("90");
     expect(balanceAliceAfter.sub(balanceAliceBefore).toString()).to.equal("10");
@@ -137,7 +131,6 @@ describe('send', () => {
         }]
       }
     })
-    console.log("TOKEN", JSON.stringify(token, null, 2))
     let balanceContractBefore = await getBalance(domain.address)
     let balanceAliceBefore = await getBalance(util.alice.address)
     let balanceBobBefore = await getBalance(util.bob.address)
@@ -146,9 +139,6 @@ describe('send', () => {
     let balanceAliceAfter = await getBalance(util.alice.address)
     let balanceBobAfter = await getBalance(util.bob.address)
 
-    console.log(balanceContractBefore, balanceContractAfter)
-    console.log(balanceAliceBefore, balanceAliceAfter)
-    console.log(balanceBobBefore, balanceBobAfter)
 
     expect(balanceContractAfter.sub(balanceContractBefore).toString()).to.equal("70");
     expect(balanceAliceAfter.sub(balanceAliceBefore).toString()).to.equal("10");
@@ -174,7 +164,6 @@ describe('send', () => {
         }]
       }
     })
-    console.log("TOKEN", JSON.stringify(token, null, 2))
     let balanceContractBefore = await getBalance(domain.address)
     let balanceAliceBefore = await getBalance(util.alice.address)
     let balanceBobBefore = await getBalance(util.bob.address)
@@ -196,11 +185,10 @@ describe('send', () => {
         value: 10 ** 2,
         payments: [{
           where: util.alice.address,
-          what: (10 ** 6) // 10%
+          what: (10 ** 6) // 100%
         }]
       }
     })
-    console.log("TOKEN", JSON.stringify(token, null, 2))
     let balanceContractBefore = await getBalance(domain.address)
     let balanceAliceBefore = await getBalance(util.alice.address)
     let tx = await c0.token.send([token], [])
@@ -226,14 +214,41 @@ describe('send', () => {
         value: 10 ** 2,
         payments: [{
           where: util.alice.address,
-          what: 7 * (10 ** 5) // 10%
+          what: 7 * (10 ** 5) // 70%
         }, {
           where: util.bob.address,
-          what: 5 * (10 ** 5) // 20%
+          what: 5 * (10 ** 5) // 50%
         }]
       }
     })
-    console.log("TOKEN", JSON.stringify(token, null, 2))
+    let balanceContractBefore = await getBalance(domain.address)
+    let balanceAliceBefore = await getBalance(util.alice.address)
+    let balanceBobBefore = await getBalance(util.bob.address)
+    let tx = c0.token.send([token], [])
+    await expect(tx).to.be.revertedWith("10c");
+  })
+  it('if the total payment exceeds 1000000, it should fail even if the value is 0', async () => {
+
+    // first put some money into the contract, so the calls don't fail because there's no money in the conract
+    let tx0 = await web3.eth.sendTransaction({
+      from: util.deployer.address,
+      to: domain.address,
+      value: "" + Math.pow(10, 20)
+    })
+    let token = await c0.token.create({
+      domain,
+      body: {
+        cid: cid,
+        value: 10 ** 2,
+        payments: [{
+          where: util.alice.address,
+          what: 7 * (10 ** 5) // 70%
+        }, {
+          where: util.bob.address,
+          what: 5 * (10 ** 5) // 50%
+        }]
+      }
+    })
     let balanceContractBefore = await getBalance(domain.address)
     let balanceAliceBefore = await getBalance(util.alice.address)
     let balanceBobBefore = await getBalance(util.bob.address)
@@ -257,7 +272,6 @@ describe('send', () => {
         }]
       }
     })
-    console.log("TOKEN", JSON.stringify(token, null, 2))
     let balanceContractBefore = await getBalance(domain.address)
     let balanceAliceBefore = await getBalance(util.alice.address)
     let balanceBobBefore = await getBalance(util.bob.address)

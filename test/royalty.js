@@ -62,7 +62,6 @@ describe('royalty', () => {
 
     // 300 wei revenue => should receive 10000/1M = 1% => 3 wei
     let ro = await c0.token.methods(domain.address).royaltyInfo(token.body.id, 300).call()
-    console.log("ro", ro)
     expect(ro.receiver).to.equal(util.bob.address)
     expect(ro.royaltyAmount).to.equal("3");
   })
@@ -75,7 +74,6 @@ describe('royalty', () => {
 
     // 300 wei revenue => null address should receive 0 wei
     let ro = await c0.token.methods(domain.address).royaltyInfo(token.body.id, 300).call()
-    console.log(ro)
     expect(ro.royaltyAmount).to.equal('0')
     expect(ro.receiver).to.equal("0x0000000000000000000000000000000000000000")
   })
@@ -92,14 +90,11 @@ describe('royalty', () => {
 //        royaltyAmount: 10**5 // 10%
       }
     })
-    console.log("token", token)
     let tx = await c0.token.send([token], [])
     let owner = await c0.token.methods(domain.address).ownerOf(id(cidDigest)).call()
-    console.log("owner", owner)
     expect(owner).to.equal(c0.account)
 
     let royaltyInfo = await c0.token.methods(domain.address).royaltyInfo(id(cidDigest), 42 * 10 ** 6).call()
-    console.log("royaltyInfo", royaltyInfo)
     expect(royaltyInfo.royaltyAmount).to.equal("" + 42 * 10 ** 5)
     expect(royaltyInfo.receiver).to.equal("0x502b2FE7Cc3488fcfF2E16158615AF87b4Ab5C41")
     
@@ -116,13 +111,10 @@ describe('royalty', () => {
       },
       domain
     })
-    console.log("gift", JSON.stringify(gift, null, 2))
     let tx = await c0.gift.send([gift])
     let owner = await c0.token.methods(domain.address).ownerOf(gift.body.id).call()
-    console.log("owner", owner)
     expect(owner).to.equal("0x502b2FE7Cc3488fcfF2E16158615AF87b4Ab5C41")
     let ro = await c0.token.methods(domain.address).royaltyInfo(gift.body.id, 300).call()
-    console.log(ro)
     expect(ro.royaltyAmount).to.equal('30')
     expect(ro.receiver).to.equal("0x502b2FE7Cc3488fcfF2E16158615AF87b4Ab5C41")
   })

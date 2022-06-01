@@ -53,10 +53,8 @@ describe('gift', () => {
       },
       domain
     })
-    console.log("gift", gift)
     let tx = await c0.gift.send([gift])
     let owner = await c0.token.methods(domain.address).ownerOf(gift.body.id).call()
-    console.log("owner", owner)
     expect(owner).to.equal("0x502b2FE7Cc3488fcfF2E16158615AF87b4Ab5C41")
   })
   it('gift multiple tokens', async () => {
@@ -82,7 +80,6 @@ describe('gift', () => {
     })
     gifts.push(gift3)
 
-    console.log("gifts", gifts)
     let tx = await c0.gift.send(gifts)
     let owner = await c0.token.methods(domain.address).ownerOf(gifts[0].body.id).call()
     expect(owner).to.equal(util.alice.address)

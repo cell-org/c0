@@ -52,7 +52,31 @@ describe('receive', () => {
       value: "" + Math.pow(10, 20)
     })
     let balance = await web3.eth.getBalance(domain.address)
-    console.log("balance", balance)
     expect("" + balance).to.equal("" + Math.pow(10, 20))
+  })
+  it('send money to the contract and withdraw', async () => {
+    let tx0 = await web3.eth.sendTransaction({
+      from: util.deployer.address,
+      to: domain.address,
+      value: "" + Math.pow(10, 20)
+    })
+    let balance = await web3.eth.getBalance(domain.address)
+    expect("" + balance).to.equal("" + Math.pow(10, 20))
+
+    let myBalanceBefore = await web3.eth.getBalance(c0.account)
+
+    let tx = await c0.token.methods(domain.address).withdraw(0).send()
+
+    balance = await web3.eth.getBalance(domain.address)
+    expect("" + balance).to.equal("0")
+
+    let myBalanceAfter = await web3.eth.getBalance(c0.account)
+
+    let expected = new web3.utils.BN(myBalanceBefore)
+      .add(new web3.utils.BN(10).pow(new web3.utils.BN(20)))
+      .sub(new web3.utils.BN(tx.gasUsed * tx.effectiveGasPrice)).toString()
+
+    expect(myBalanceAfter).to.equal(expected)
+
   })
 })

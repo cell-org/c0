@@ -168,7 +168,6 @@ describe('state', () => {
   })
   it('can pause, and then re-open and setBaseURI()', async () => {
     let baseURI = await c0.token.methods(domain.address).baseURI().call()
-    console.log("baseURI", baseURI)
     expect(baseURI).to.equal("")
 
     let state = await c0.token.methods(domain.address).state().call()
@@ -182,9 +181,9 @@ describe('state', () => {
     state = await c0.token.methods(domain.address).state().call()
     expect(state).to.equal('0')
 
-    tx = await c0.token.methods(domain.address).setBaseURI("https://mysite.com/files").send()
+    tx = await c0.token.methods(domain.address).setBaseURI("https://mysite.com/files/").send()
     baseURI = await c0.token.methods(domain.address).baseURI().call()
-    console.log("baseURI", baseURI)
+    expect(baseURI).to.equal("https://mysite.com/files/")
   })
 
 

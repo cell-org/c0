@@ -10,9 +10,10 @@ class Util {
     return bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
   }
   async deploy () {
-    const [_deployer, u1, u2] = await ethers.getSigners();
+    const [_deployer, u1, u2, u3] = await ethers.getSigners();
     this.alice = u1;
     this.bob = u2;
+    this.carol = u3;
     this.deployer = _deployer;
     let Factory = await ethers.getContractFactory('Factory');
     this.factory = await Factory.deploy()
